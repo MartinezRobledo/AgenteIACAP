@@ -6,8 +6,12 @@ authors = [
     {name = "Adrián Martínez",email = "adrianfmart@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4.0"
 dependencies = [
+    "langgraph (>=0.2.63,<0.3.0)",
+    "langchain-openai (>=0.3.0,<0.4.0)",
+    "langgraph-cli[inmen] (>=0.1.67,<0.2.0)",
+    "langgraph-api (>=0.0.16,<0.0.17)"
 ]
 
 

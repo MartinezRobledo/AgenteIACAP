@@ -10,7 +10,7 @@ class State(TypedDict):
 
 def node_1(state: State) -> State:
     state["my_var"] = "Hello"
-    state["customer_name"] = "Jhon"
+    state["customer_name"] = "CAP"
     return state
 
 def node_2(state: State) -> State:

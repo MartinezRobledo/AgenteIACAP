@@ -37,4 +37,4 @@ graph.add_edge('node_2', 'node_3')
 graph.add_edge('node_3', END)
 
 
-graph.compile()
+react = graph.compile()

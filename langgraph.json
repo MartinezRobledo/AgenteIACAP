@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-        "cap_agent": "./app/agent.py:graph"
+        "cap_agent": "./app/agent.py:react"
     }
 }

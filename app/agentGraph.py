@@ -3,7 +3,6 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.graph import StateGraph, START, END, MessagesState
-from langgraph.checkpoint.memory import MemorySaver
 
 # Define the schema for the input
 class InputState(TypedDict):
@@ -13,11 +12,6 @@ class InputState(TypedDict):
 # Define the schema for the output
 class OutputState(TypedDict):
     categoria: str
-
-# Define el estado del agente
-# class State(TypedDict):
-#     messages: Annotated[list, add_messages]
-
 
 categories = [
     "Categoría: Alta de usuario, Descripción: Se suele pedir explícitamente en el asunto o en el cuerpo del mail. Sujeto a palabras claves dentro del contexto de la generación o gestión de un nuevo usuario.",
@@ -48,7 +42,7 @@ cleaner_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Instruccion del agente
+# Instruccion del agente clasificador
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -58,6 +52,21 @@ prompt = ChatPromptTemplate.from_messages(
             La respuesta solo puede ser alguna de las opciones posibles para categorizar un mail y te vas a basar en la descripción de la categoría para hacerlo.
             La respuesta que des tiene que incluir el mail que recibiste para analizar y la categoría que terminaste eligiendo.
             """,
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+)
+
+# Instruccion del agente que reflexiona
+reflection_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """Eres un asistente experto en análisis de texto y validación de clasificaciones. 
+            Tu tarea es validar si el mail que se te brinda junto con su categoría asignada es coherente con su descripción.
+            Para esto vas a hacer uso de las categorías y descripciones que se te brinden. 
+            Si la categoría no es adecuada, deberás explicar por qué al modelo que categoriza para que pueda encontrar una mejor categoría.
+            Tienes que tener en cuenta que los mensajes pueden venir ambiguos o con información faltante, y tambien pueden no encajar en ninguna categoría, en esos casos debe ser 'Otras consultas'.""",
         ),
         MessagesPlaceholder(variable_name="messages"),
     ]
@@ -82,19 +91,6 @@ llm4o_mini = AzureChatOpenAI(
     max_retries=2
 )
 
-reflection_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """Eres un asistente experto en análisis de texto y validación de clasificaciones. 
-            Tu tarea es validar si el mail que se te brinda junto con su categoría asignada es coherente con su descripción.
-            Para esto vas a hacer uso de las categorías y descripciones que se te brinden. 
-            Si la categoría no es adecuada, deberás explicar por qué al modelo que categoriza para que pueda encontrar una mejor categoría.
-            Tienes que tener en cuenta que los mensajes pueden venir ambiguos o con información faltante, y tambien pueden no encajar en ninguna categoría, en esos casos debe ser 'Otras consultas'.""",
-        ),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
 
 clean = cleaner_prompt | llm4o_mini
 classiffier = prompt | llm4o
@@ -107,7 +103,7 @@ def input_node(state: InputState) -> MessagesState:
             {state['cuerpo']}
         """
     )])
-    print("Consumo total de tokens cleaner: ", cuerpo_filtrado.response_metadata['token_usage']['total_tokens'])
+    # print("Consumo total de tokens cleaner: ", cuerpo_filtrado.response_metadata['token_usage']['total_tokens'])
     return {"messages": [
                 HumanMessage(
                     content=f"""A continuación te dejo el siguiente mail para que lo categorices,\n
@@ -121,7 +117,7 @@ def input_node(state: InputState) -> MessagesState:
 
 async def classifier_node(state: MessagesState) -> MessagesState:
     result = await classiffier.ainvoke(state["messages"])
-    print("Consumo total de tokens classifier: ", result.response_metadata['token_usage']['total_tokens'])
+    # print("Consumo total de tokens classifier: ", result.response_metadata['token_usage']['total_tokens'])
     return {"messages": [result]}
 
 
@@ -142,7 +138,7 @@ async def reflection_node(state: MessagesState) -> MessagesState:
             """
     ))
     res = await reflect.ainvoke(translated)
-    print("Consumo total de tokens reflect: ", res.response_metadata['token_usage']['total_tokens'])
+    # print("Consumo total de tokens reflect: ", res.response_metadata['token_usage']['total_tokens'])
     # We treat the output of this as human feedback for the generator
     return {"messages": [HumanMessage(content=res.content)]}
 
@@ -175,8 +171,6 @@ builder.add_edge("input", "classifier")
 builder.add_edge("classifier", "reflect")
 builder.add_conditional_edges("reflect", should_continue, {True: "output", False: "classifier"})
 builder.add_edge("output", END)
-# memory = MemorySaver()
 
 # Defino graph
-# graph = builder.compile(checkpointer=memory)
 graph = builder.compile()

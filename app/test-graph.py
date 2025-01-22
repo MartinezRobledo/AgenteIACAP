@@ -12,7 +12,7 @@ async def process_row(asunto: str, cuerpo: str, index) -> str:
     input_state = InputState(asunto=asunto, cuerpo=cuerpo)
     # config = {"configurable": {"thread_id": "1"}}
     output = await graph.ainvoke(input_state)
-    print(f"Resultado del caso {index+2}: {output}")
+    return output['categoria'].replace("*","")
 
 async def main():
     # Leer el archivo Excel
@@ -30,16 +30,17 @@ async def main():
         try:
             categoria = await process_row(row["Asunto"], row["Cuerpo"], index)
             categorias.append(categoria)
+            print(f"Resultado de la fila {index+2}: {categoria}")
         except Exception as e:
             print(f"Error al procesar fila {index + 2}: {e}")
             categorias.append("Error")
 
         # Dormir por 15 segundos entre cada iteración
-        print("Esperando 15 segundos...")
-        await asyncio.sleep(15)
+        print("Esperando 10 segundos...")
+        await asyncio.sleep(10)
 
     # Añadir las categorías al DataFrame
-    df["Categoria Calculada"] = categorias
+    df["Categoría"] = categorias
 
     # Guardar los resultados en un nuevo archivo Excel
     output_file_path = EXCEL_FILE_PATH.replace(".xlsx", "_resultados.xlsx")

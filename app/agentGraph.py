@@ -1,12 +1,8 @@
-import asyncio
 from typing import TypedDict
-from typing import Annotated, List, Sequence
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
-from langgraph.prebuilt import tools_condition, ToolNode
+from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.checkpoint.memory import MemorySaver
 
 # Define the schema for the input
@@ -19,21 +15,22 @@ class OutputState(TypedDict):
     categoria: str
 
 # Define el estado del agente
-class State(TypedDict):
-    messages: Annotated[list, add_messages]
+# class State(TypedDict):
+#     messages: Annotated[list, add_messages]
 
 
 categories = [
     "Categoría: Alta de usuario, Descripción: Se suele pedir explícitamente en el asunto o en el cuerpo del mail. Sujeto a palabras claves dentro del contexto de la generación o gestión de un nuevo usuario.",
     "Categoría: Error de registración, Descripción: el reclamo siempre es por fechas de vencimiento mal aplicadas. Sujeto al contexto en que el proveedor reclama una mala asignación de la fecha de vencimiento de su factura en el sistema.", 
-    "Categoría: Estado de facturas, Descripción: Consultas sobre facturas, facturación, estado de facturas, facturas pendientes, facturas vencidas, facturas impagas, facturas no cobradas.",
+    "Categoría: Estado de facturas, Descripción: Consultas sobre estado de facturas, facturas pendientes, facturas vencidas, facturas impagas, facturas no cobradas.",
     "Categoría: Facturas rechazadas, Descripción: Se suele aclarar explícitamente en el asunto o en el cuerpo del mail que la factura fue rechazada. Sujeto a contexto en que se pide motivo del rechazo de una factura.", 
     "Categoría: Impresión de NC/ND, Descripción: Ahora se llama “Multas”. Sujeto a palabras clave relacionadas con Multas. Sujeto al contexto en que se reclama o consulta por diferencias en el pago . ", 
     "Categoría: Impresión de OP y/o Retenciones, Descripción: Suele ser una solicitud o pedido de ordenes de pago (OP) o retenciones. Suele estar explicito en el asunto o en el cuerpo del mail un mensaje pidiendo retenciones/OP.",
     "Categoría: Pedido devolución retenciones, Descripción: Suele estar explicito en el asunto o cuerpo del mail. Sujeto a palabras clave relacionadas con una devolución o reintegro de una retención. También se suele hacer mención con frecuencia que se envía una nota o se adjunta una nota solicitando a la devolución del monto retenido.",
-    "Categoría: Presentación de facturas, Descripción: Sujeto al contexto en que el proveedor adjunta una factura y aclara el numero de la factura. Puede explicitar que es una presentación en el asunto como puedo no hacerlo, pero siempre se va a referir a un mensaje que indica el adjunto de una factura.", 
+    "Categoría: Presentación de facturas, Descripción: Sujeto al contexto en que el proveedor adjunta una factura y aclara el numero de la factura. Puede explicitar que es una presentación en el asunto como puede no hacerlo, pero siempre se va a referir a un mensaje que indica el adjunto de una factura. Esta no es una categoría en la que entren consultas.", 
     "Categoría: Problemas de acceso, Descripción: Sujeto al contexto en que se reclama por no poder acceder a facturar u obtener información de una factura. No se solicita información de una factura solo se reclama el acceso al sistema.", 
     "Categoría: Salientes YPF, Descripción: No se aclara explícitamente el texto “Salientes YPF”. Está sujeto al contexto en que se pide INFORMAR AL PROVEEDOR de algo."
+    "Categoría: Otras consultas, Descripción: Consultas generales que no encajan en ninguna de las categorías."
 ]
 categories = "\n".join(categories)
 
@@ -58,8 +55,8 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             """Sos un categorizador de casos que se reciben por mail de un contact center de un equipo de facturación. 
             Vas a recibir un asunto y un cuerpo de un mail y tenés que categorizarlo en base a las categorías que te indiquen.
-            La respuesta solo puede ser alguna de las opciones posibles para categorizar un mail y te vas a basar en la descripción se la categoría para hacerlo.
-            La respuesta que des tiene que incluir el mail que recibiste para analizar y la categoría que terminaste escogiendo.
+            La respuesta solo puede ser alguna de las opciones posibles para categorizar un mail y te vas a basar en la descripción de la categoría para hacerlo.
+            La respuesta que des tiene que incluir el mail que recibiste para analizar y la categoría que terminaste eligiendo.
             """,
         ),
         MessagesPlaceholder(variable_name="messages"),
@@ -67,8 +64,17 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 # Define el modelo de OpenAI (reemplaza con tu configuración correcta)
-llm = AzureChatOpenAI(
+llm4o = AzureChatOpenAI(
     azure_deployment="gpt-4o",  
+    api_version="2024-02-15-preview",
+    temperature=0,
+    max_tokens=10000,
+    timeout=None,
+    max_retries=2
+)
+
+llm4o_mini = AzureChatOpenAI(
+    azure_deployment="gpt-4o-mini",  
     api_version="2024-02-15-preview",
     temperature=0,
     max_tokens=10000,
@@ -90,17 +96,18 @@ reflection_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-clean = cleaner_prompt | llm
-generate = prompt | llm
-reflect = reflection_prompt | llm
+clean = cleaner_prompt | llm4o_mini
+classiffier = prompt | llm4o
+reflect = reflection_prompt | llm4o
 
 # Defino nodes
-def input_node(state: InputState) -> State:
+def input_node(state: InputState) -> MessagesState:
     cuerpo_filtrado = clean.invoke([HumanMessage(
         content = f"""Limpia el siguiente cuerpo de mail:\n
             {state['cuerpo']}
         """
     )])
+    print("Consumo total de tokens cleaner: ", cuerpo_filtrado.response_metadata['token_usage']['total_tokens'])
     return {"messages": [
                 HumanMessage(
                     content=f"""A continuación te dejo el siguiente mail para que lo categorices,\n
@@ -112,12 +119,13 @@ def input_node(state: InputState) -> State:
                 )
             ]}
 
-async def generation_node(state: State) -> State:
-    result = await generate.ainvoke(state["messages"])
+async def classifier_node(state: MessagesState) -> MessagesState:
+    result = await classiffier.ainvoke(state["messages"])
+    print("Consumo total de tokens classifier: ", result.response_metadata['token_usage']['total_tokens'])
     return {"messages": [result]}
 
 
-async def reflection_node(state: State) -> State:
+async def reflection_node(state: MessagesState) -> MessagesState:
     # Other messages we need to adjust
     cls_map = {"ai": HumanMessage, "human": AIMessage}
     # First message is the original user request. We hold it the same for all nodes
@@ -131,28 +139,29 @@ async def reflection_node(state: State) -> State:
             Si es que NO el texto 'GO TO END' NO debe aparecer en el mensaje de salida.
             Las categorias posibles son:\n
             {categories}
-                    """
+            """
     ))
     res = await reflect.ainvoke(translated)
+    print("Consumo total de tokens reflect: ", res.response_metadata['token_usage']['total_tokens'])
     # We treat the output of this as human feedback for the generator
     return {"messages": [HumanMessage(content=res.content)]}
 
-def output_node(state: State) -> OutputState:
+def output_node(state: MessagesState) -> OutputState:
     last_message = state["messages"][-1].content  # Obtener el último mensaje
     if "GO TO END:" in last_message:
         categoria = last_message.split("GO TO END:")[-1].strip()  # Extraer el valor después de "GO TO END:"
         return OutputState(categoria=categoria)
-    return OutputState(categoria="Desconocida")  # Valor por defecto si no se encuentra el texto
+    return OutputState(categoria="Desconocida")  # Valor por defecto si no se encuentra el texto, Desconocida = Excepcion.
 
 
-builder = StateGraph(State, input=InputState, output=OutputState)
+builder = StateGraph(input=InputState, output=OutputState)
 builder.add_node("input", input_node)
-builder.add_node("generate", generation_node)
+builder.add_node("classifier", classifier_node)
 builder.add_node("reflect", reflection_node)
 builder.add_node("output", output_node)
 
 # Defino edges
-def should_continue(state: State):
+def should_continue(state: MessagesState):
     last_message = state["messages"][-1].content if state["messages"] else ""
     if "GO TO END" in last_message:
         return True
@@ -162,35 +171,12 @@ def should_continue(state: State):
 
 
 builder.add_edge(START, "input")
-builder.add_edge("input", "generate")
-builder.add_edge("generate", "reflect")
-builder.add_conditional_edges("reflect", should_continue, {True: "output", False: "generate"})
+builder.add_edge("input", "classifier")
+builder.add_edge("classifier", "reflect")
+builder.add_conditional_edges("reflect", should_continue, {True: "output", False: "classifier"})
 builder.add_edge("output", END)
-memory = MemorySaver()
+# memory = MemorySaver()
 
 # Defino graph
-graph = builder.compile(checkpointer=memory)
-config = {"configurable": {"thread_id": "1"}}
-
-async def run_graph():
-    
-    async for event in graph.astream(
-        {
-            "messages": State['messages'],
-        },
-        config,
-    ):
-        print(event)
-        print("---")
-
-# Función principal para ejecutar todo el flujo
-async def main():
-    await run_graph()
-    state = graph.get_state(config)
-    ChatPromptTemplate.from_messages(state["messages"]).pretty_print()
-
-# Iniciar el ciclo de eventos
-if __name__ == "__main__":
-    asyncio.run(main())
-
-
+# graph = builder.compile(checkpointer=memory)
+graph = builder.compile()

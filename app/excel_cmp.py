@@ -49,7 +49,7 @@ def comparar_columnas_categoria(ruta_excel_a, ruta_excel_b):
 
 # Rutas de los archivos Excel
 ruta_a = "D:\\Python\\agents\\app\\Casos categorizados.xlsx"
-ruta_b = "D:\\Python\\agents\\app\\Casos_resultados_executor_4o-mini.xlsx"
+ruta_b = "D:\\Python\\agents\\app\\Casos_resultados_graph_4o.xlsx"
 
 # Llamar a la función
 comparar_columnas_categoria(ruta_a, ruta_b)

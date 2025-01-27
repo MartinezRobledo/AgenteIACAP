@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-        "cap_agent": "./app/agentGraph.py:graph"
+        "cap_agent": "./src/agents/agentCleaner.py:cleaner"
     }
 }

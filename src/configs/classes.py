@@ -1,14 +1,11 @@
-class Mail:
+from typing import TypedDict
+
+class Mail(TypedDict):
     asunto:str
     cuerpo:str
     adjuntos:str
-    categoría:str
-    def __init__(self, asunto: str, cuerpo: str, adjuntos: str, categoría:str):
-        self.asunto = asunto
-        self.cuerpo = cuerpo
-        self.adjuntos = adjuntos
-        self.categoría = categoría
-
+    categoria:str
+    
     # Getters
     def get_asunto(self) -> str:
         return self.asunto
@@ -24,18 +21,11 @@ class Mail:
         self.adjuntos = ""
 
 # Schemas de entrada y salida
-class Input:
+class Input(TypedDict):
     asunto:str
     cuerpo:str
     adjuntos:str
-    def __init__(self, asunto:str, cuerpo:str, adjuntos:str):
-        self.asunto=asunto
-        self.cuerpo=cuerpo
-        self.adjuntos=adjuntos
 
-class Output:
-    categoría:str
+class Output(TypedDict):
+    categoria:str
     data:dict
-    def __init__(self, categoría:str, data:dict):
-        self.categoría = categoría
-        self.data = data

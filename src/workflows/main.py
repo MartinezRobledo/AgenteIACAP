@@ -18,8 +18,7 @@ mail:Mail
 
 # Nodo de entrada de datos
 def input_node(input:Input) -> Input:
-    mail = input.mail
-    return mail
+    mail = input
     
 
 # Nodo de salida de datos

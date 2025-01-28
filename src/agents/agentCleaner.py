@@ -15,7 +15,9 @@ def clean_body(state: Input) -> Input:
             {state.cuerpo}
         """
     )])
-    return Input(asunto=state.asunto, cuerpo=cuerpo_filtrado, adjuntos=state.adjuntos)
+    if not hasattr(cuerpo_filtrado, "content"):
+        raise AttributeError("El objeto retornado por clean.invoke no tiene el atributo 'content'.")
+    return Input(asunto=state.asunto, cuerpo=cuerpo_filtrado.content, adjuntos=state.adjuntos)
 
 def clean_attachments(state: Input) -> Input:
     if len(state.adjuntos) == 0:

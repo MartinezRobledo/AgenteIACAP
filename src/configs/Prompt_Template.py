@@ -15,6 +15,17 @@ categories = [
     "Categoría: Otras consultas, Descripción: Consultas generales que no encajan en ninguna de las categorías."
 ]
 
+fields_to_extract = [
+    "VendorName",
+    "CustomerName",
+    "CustomerTaxId",
+    "VendorTaxId",
+    "CustomerAddress",
+    "InvoiceId",
+    "InvoiceDate",
+    "InvoiceTotal",
+]
+
 # Instruccion del agente de limpieza
 cleaner_definition = ChatPromptTemplate.from_messages(
     [
@@ -93,4 +104,24 @@ reflection_prompt = HumanMessage(
             Las categorias posibles son:\n
             {categories}
             """
+)
+
+text_extractor_definition = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            f"""Eres una IA especializada en extracción de información de correos electrónicos. Se te proporcionaré el contenido de un email y una lista de datos específicos que necesito extraer.  
+
+            **Instrucciones:**  
+            - Analiza el contenido del correo y extrae la información solicitada.  
+            - Si algún dato no está presente, indica "No encontrado".  
+            - Responde en formato JSON con las claves de los datos solicitados y sus valores extraídos.  
+            - Mantén el formato original de los valores y evita interpretaciones subjetivas.  
+
+            **Lista de datos a extraer:**  
+            {fields_to_extract}
+            """,
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
 )

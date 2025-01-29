@@ -140,6 +140,7 @@ def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
             final_results.append({
                 "file_name": file_name,
                 "fields": text_result["results"],
+                "missing_fields": text_result["missing_fields"],
                 "error": text_result["error"]
             })
 
@@ -147,6 +148,7 @@ def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
             final_results.append({
                 "file_name": file_name,
                 "fields": [],
+                "missing_fields": [],
                 "error": str(e)
             })
 

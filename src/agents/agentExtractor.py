@@ -1,12 +1,21 @@
 import asyncio
 import operator
-from src.services.tools.document_intelligence import process_base64_files, process_base64_images
+from tabulate import tabulate
+from typing_extensions import TypedDict
+from src.services.tools.document_intelligence import process_base64_files, ImageFieldExtractor
 from src.utils.armar_json_adjuntos_b64 import generate_json_from_file
 from typing import Annotated, Any, List, Dict
 from langgraph.graph import StateGraph, START, END
 
-class State:
-    results: Annotated[list, operator.add]
+class State(TypedDict):
+    # La lista `aggregate` acumulará valores
+    aggregate: Annotated[list, operator.add]
+    images: list  # Almacena el valor para "b"
+    files: list  # Almacena el valor para "c"
+    input_value: list  # Valor recibido desde START
+
+class OutputState(TypedDict):
+    extractions:dict
 
 fields_to_extract = [
     "VendorName",
@@ -19,61 +28,74 @@ fields_to_extract = [
     "InvoiceTotal",
 ]
 
-def classify_files(state: State, files: List[Dict]) -> Dict:
+class ClassifyNode:
+    def __call__(self, state:State) -> Any:
+        # "a" pasa valores distintos a "b" y "c"
+        image_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp")
+        images, others = [], []
+        files = state["input_value"]
+        for file in files:
+            file_name = file.get("file_name", "").lower()
+            if file_name.endswith(image_extensions):
+                images.append(file)
+            else:
+                others.append(file)
+
+        print("Clasificación completada.")
+        value_for_images = images
+        value_for_pdfs = others
+        return {"images": value_for_images, "files": value_for_pdfs}
+
+
+class ImageNode:
+    async def __call__(self, state: State) -> Any:
+        # "b" retorna lo que recibió de "a"
+        # extractor = ImageFieldExtractor()
+        # result = extractor.extract_fields(base64_images=state["images"], fields_to_extract=fields_to_extract)
+        result = process_base64_files(base64_files=state["images"], fields_to_extract=fields_to_extract)
+        return {"aggregate": [result]}
+
+
+
+class PdfNode:
+    async def __call__(self, state: State) -> Any:
+        # "c" retorna lo que recibió de "a"
+        result = process_base64_files(base64_files=state["files"], fields_to_extract=fields_to_extract)
+        return {"aggregate": [result]}
+
+
+def merge_results(state: State) -> OutputState:
     """
-    Clasifica los archivos en imágenes y otros tipos.
-    """
-    image_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp")
-    images, others = [], []
-
-    for file in files:
-        file_name = file.get("file_name", "").lower()
-        if file_name.endswith(image_extensions):
-            images.append(file)
-        else:
-            others.append(file)
-
-    print("Clasificación completada.")
-    return {"images": images, "others": others}
-
-def input_node(attachments:list) -> list:
-    categorized_files = classify_files(attachments)
-
-
-async def extraction_file_node(files:list) -> dict:
-    return process_base64_files(base64_files=files, fields_to_extract=fields_to_extract)
-
-async def extraction_image_node(images:list) ->dict:
-    return process_base64_images(base64_images=images, fields_to_extract=fields_to_extract)
-
-
-def merge_results(state: State, images_result: List[Dict], files_result: List[Dict]) -> List[Dict]:
-    """
-    Combina los resultados de imágenes y archivos.
+    Combina los resultados de imágenes y archivos en un único diccionario de extracciones.
     """
     print("Fusionando resultados...")
-    return images_result + files_result
+    return {"extractions": state["aggregate"]}
+
 
 # Construcción del grafo
-builder = StateGraph(State)
+builder = StateGraph(input=State, output=OutputState)
 
 # Nodo a: Clasificar archivos
-builder.add_node("brancher", lambda state, files: classify_files(state, files))
-builder.add_edge(START, "input")
+builder.add_node("brancher", ClassifyNode())
+builder.add_edge(START, "brancher")
 
 # Nodo b: Procesar imágenes
-builder.add_node("extract to images", lambda state, images: extraction_image_node(state, images))
-builder.add_edge("brancher", "extract to images", condition=lambda outputs: outputs["images"])
+builder.add_node("extract from images", ImageNode())
+builder.add_edge("brancher", "extract from images")
 
 # Nodo c: Procesar archivos
-builder.add_node("extract to files", lambda state, files: extraction_file_node(state, files))
-builder.add_edge("brancher", "extract to files", condition=lambda outputs: outputs["others"])
+builder.add_node("extract from pdf", PdfNode())
+builder.add_edge("brancher", "extract from pdf")
 
 # Nodo d: Fusionar resultados
-builder.add_node("merger", lambda state, images_result, files_result: merge_results(state, images_result, files_result))
-builder.add_edge("extract to images", "merger")
-builder.add_edge("extract to files", "merger")
+builder.add_node("merger", merge_results)
+builder.add_edge("extract from images", "merger")
+builder.add_edge("extract from pdf", "merger")
 builder.add_edge("merger", END)
+
+extractor = builder.compile()
+
+
 
 async def main():
     input_paths = [
@@ -82,12 +104,12 @@ async def main():
     ]
 
     # Llama a la función `generate_json_from_pdfs` (debe ser adaptada para ser async si no lo es).
-    file_json = generate_json_from_file(input_paths)
+    data_json = generate_json_from_file(input_paths)
     
     # Llama a `extraction_node`, asegurándote de que también sea una función asincrónica.
-    data = await extraction_file_node(file_json)
+    result = await extractor.ainvoke({"aggregate": [], "images": "", "files": "", "input_value": data_json})
 
-    print(f"Extracción exitosa:\n{data}")
+    print("Salida: ", result)
 
 # Ejecuta el evento principal asincrónico
 if __name__ == "__main__":

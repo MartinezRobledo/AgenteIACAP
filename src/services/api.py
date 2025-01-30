@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from agentGraph import graph
+from src.workflows.main import graph
 
 app = FastAPI()
 

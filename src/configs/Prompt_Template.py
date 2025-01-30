@@ -26,6 +26,29 @@ fields_to_extract = [
     "InvoiceTotal",
 ]
 
+lista_sociedades = [
+    {"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685211890", "Nombre en AFIP": "ASTRA EVANGELISTA SA"},
+    {"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."},
+    {"Nombre Soc SAP": "UTE LA VENTANA", "Código SAP": "0571", "Estado": "Activa", "CUIT": "30652671418", "Nombre en AFIP": "YACIMIENTO LA VENTANA YPF SA SINOPEC ARGENTINA EXPLORATION AND PRODUCTION INC UNION TRANSITORIA"},
+    {"Nombre Soc SAP": "YPF S.A.", "Código SAP": "0620", "Estado": "Activa", "CUIT": "30546689979", "Nombre en AFIP": "YPF SA"},
+    {"Nombre Soc SAP": "Fundación YPF", "Código SAP": "0789", "Estado": "Activa", "CUIT": "30691548054", "Nombre en AFIP": "FUNDACION YPF"},
+    {"Nombre Soc SAP": "UTE LLANCANELO", "Código SAP": "0797", "Estado": "Activa", "CUIT": "30707293809", "Nombre en AFIP": "CONTRATO DE UNION TRANSITORIA DE EMPRESAS - AREA LLANCANELO U.T.E."},
+    {"Nombre Soc SAP": "OPESSA", "Código SAP": "0680", "Estado": "Activa", "CUIT": "30678774495", "Nombre en AFIP": "OPERADORAS DE ESTACIONES DE SERVICIO SA"},
+    {"Nombre Soc SAP": "UTE CAMPAMENTO CENTRAL CAÑADON PERDIDO", "Código SAP": "0862", "Estado": "Activa", "CUIT": "33707856349", "Nombre en AFIP": "YPF S A - SIPETROL ARGENTINA S A - UTE CAMPAMENTO CENTRAL - CAÑADON PERDIDO"},
+    {"Nombre Soc SAP": "UTE BANDURRIA", "Código SAP": "0900", "Estado": "Activa", "CUIT": "30708313587", "Nombre en AFIP": "YPF S.A WINTENSHALL ENERGIA SA - PAN AMERICAN ENERGY LLC AREA BANDURRIA UTE"},
+    {"Nombre Soc SAP": "Ute Santo Domingo I y II", "Código SAP": "0901", "Estado": "Activa", "CUIT": "30713651504", "Nombre en AFIP": "GAS Y PETROELO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA - YPF S.A. - AREA SANTO DOMINGO I Y II UTE"},
+    {"Nombre Soc SAP": "UTE CERRO LAS MINAS", "Código SAP": "0918", "Estado": "Activa", "CUIT": "30712188061", "Nombre en AFIP": "GAS Y PETROLEO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA-YPF S.A.-TOTAL AUSTRAL SA SUC ARG-ROVELLA ENERGIA SA-AREA CERRO LAS MINAS UTE"},
+    {"Nombre Soc SAP": "UTE ZAMPAL OESTE", "Código SAP": "1046", "Estado": "Activa", "CUIT": "30709441945", "Nombre en AFIP": "YPF S.A EQUITABLE RESOURCES ARGENTINA COMPANY S.A - ZAMPAL OESTE UTE"},
+    {"Nombre Soc SAP": "UTE ENARSA 1", "Código SAP": "1146", "Estado": "Activa", "CUIT": "30710916833", "Nombre en AFIP": "ENERGIA ARGENTINA S.A.- YPF S.A.- PETROBRAS ENERGIA S.A.- PETROURUGUAY S.A. UNION TRANSITORIAS DE EMPRESAS E1"},
+    {"Nombre Soc SAP": "UTE GNL ESCOBAR", "Código SAP": "1153", "Estado": "Activa", "CUIT": "30711435227", "Nombre en AFIP": "ENERGIA ARGENTINA S.A. - YPF S.A. - PROYECTO GNL ESCOBAR - UNION TRANSITORIA DE EMPRESAS"},
+    {"Nombre Soc SAP": "UTE RINCON DEL MANGRULLO", "Código SAP": "1160", "Estado": "Activa", "CUIT": "30714428469", "Nombre en AFIP": "YPF S.A - PAMPA ENERGIA S.A.. UNION TRANSITORIA DE EMPRESAS - RINCON DEL MANGRULLO"},
+    {"Nombre Soc SAP": "UTE CHACHAHUEN", "Código SAP": "1164", "Estado": "Activa", "CUIT": "30716199025", "Nombre en AFIP": "YPF S.A.-KILWER S.A.-KETSAL S.A.-ENERGIA MENDOCINA S.A. AREA CHACHAHUEN UNION TRANSITORIA DE EMPRESAS"},
+    {"Nombre Soc SAP": "UTE LA AMARGA CHICA", "Código SAP": "1167", "Estado": "Activa", "CUIT": "30714869759", "Nombre en AFIP": "YPF S.A. - PETRONAS E&P ARGENTINA S.A."},
+    {"Nombre Soc SAP": "UTE EL OREJANO", "Código SAP": "1169", "Estado": "Activa", "CUIT": "30715142658", "Nombre en AFIP": "YPF S.A.- PBB POLISUR S.A., AREA EL OREJANO UNION TRANSITORIA"},
+    {"Nombre Soc SAP": "CIA HIDROCARBURO NO CONVENCIONAL SRL", "Código SAP": "1171", "Estado": "Activa", "CUIT": "30714124427", "Nombre en AFIP": "COMPAÑIA DE HIDROCARBURO NO CONVENCIONAL S.R.L."},
+    {"Nombre Soc SAP": "UTE PAMPA (YSUR)", "Código SAP": "1632", "Estado": "Activa", "CUIT": "30711689067", "Nombre en AFIP": "APACHE ENERGIA ARGENTINA S.R.L. - PETROLERA PAMPA S.A., UNION TRANSITORIA DE EMPRESAS - ESTACION FERNANDEZ ORO Y ANTICLINAL CAMPAMENTO"}
+]
+
 # Instruccion del agente de limpieza
 cleaner_definition = ChatPromptTemplate.from_messages(
     [
@@ -106,22 +129,100 @@ reflection_prompt = HumanMessage(
             """
 )
 
+
+lista_strings = [
+    str({f'"""{key}"""': f'"{value}"' for key, value in sociedad.items()})
+    for sociedad in lista_sociedades
+]
+
+lista_strings = "\n".join(lista_strings)
+
+
+fields_to_extract_text = [
+    "CustomerName: Este campo se refiere a la sociedad de la compañía YPF por la que se hace la consulta.",
+    "CustomerTaxId: Este campo se refiere al numero CUIT de la sociedad de YPF por la que se hace la consulta.",
+    """InvoiceId: Este campo hace referencia al numero de factura por la que se hace la consulta. 
+                Se puede encontrar tanto en el cuerpo como en el asunto del mail. 
+                A la factura se la puede mencionar como documento, comprobante, certificado, FC, FCA, FCE, FEA.""",
+    "VendorTaxId: Este campo corresponde al numero CUIT de la persona o sociedad que envía la consulta.",
+]
+fields_to_extract_text = "\n".join(fields_to_extract_text)
+
 text_extractor_definition = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            f"""Eres una IA especializada en extracción de información de correos electrónicos. Se te proporcionaré el contenido de un email y una lista de datos específicos que necesito extraer.  
+            f"""Eres una IA especializada en extracción de información de correos electrónicos. Se te proporcionaré el contenido de un email y una lista de datos específicos que se necesita extraer.  
 
             **Instrucciones:**  
             - Analiza el contenido del correo y extrae la información solicitada.  
-            - Si algún dato no está presente, indica "No encontrado".  
+            - Los datos que se logran extraer van a formar parte de un array del campo 'fields'.
+            - El numero de factura generalmente se menciona de forma explicita, pero en el caso de no estar de esa forma intenta encontrar un numero escondido que cumpla con el formato de 4 digitos seguidos de una letra 'A' o un caracter '-' seguido de 8 digitos mas.
+            - Los datos que NO se logran extraer van a formar parte de un array del campo 'missing_fields'.
+            - Los datos que estan dentro de 'missing_fields' no poseen valor por lo que solo se indica el nombre del campo.
+            - Mantén el formato original de los valores y evita interpretaciones subjetivas.
             - Responde en formato JSON con las claves de los datos solicitados y sus valores extraídos.  
-            - Mantén el formato original de los valores y evita interpretaciones subjetivas.  
 
             **Lista de datos a extraer:**  
-            {fields_to_extract}
+            {fields_to_extract_text}
+
+            **Lista de sociedades permitidas:
+                -"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685211890", "Nombre en AFIP": "ASTRA EVANGELISTA SA"
+                -"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."
+                -"Nombre Soc SAP": "UTE LA VENTANA", "Código SAP": "0571", "Estado": "Activa", "CUIT": "30652671418", "Nombre en AFIP": "YACIMIENTO LA VENTANA YPF SA SINOPEC ARGENTINA EXPLORATION AND PRODUCTION INC UNION TRANSITORIA"
+                -"Nombre Soc SAP": "YPF S.A.", "Código SAP": "0620", "Estado": "Activa", "CUIT": "30546689979", "Nombre en AFIP": "YPF SA",
+                -"Nombre Soc SAP": "Fundación YPF", "Código SAP": "0789", "Estado": "Activa", "CUIT": "30691548054", "Nombre en AFIP": "FUNDACION YPF",
+                -"Nombre Soc SAP": "UTE LLANCANELO", "Código SAP": "0797", "Estado": "Activa", "CUIT": "30707293809", "Nombre en AFIP": "CONTRATO DE UNION TRANSITORIA DE EMPRESAS - AREA LLANCANELO U.T.E.",
+                -"Nombre Soc SAP": "OPESSA", "Código SAP": "0680", "Estado": "Activa", "CUIT": "30678774495", "Nombre en AFIP": "OPERADORAS DE ESTACIONES DE SERVICIO SA",
+                -"Nombre Soc SAP": "UTE CAMPAMENTO CENTRAL CAÑADON PERDIDO", "Código SAP": "0862", "Estado": "Activa", "CUIT": "33707856349", "Nombre en AFIP": "YPF S A - SIPETROL ARGENTINA S A - UTE CAMPAMENTO CENTRAL - CAÑADON PERDIDO",
+                -"Nombre Soc SAP": "UTE BANDURRIA", "Código SAP": "0900", "Estado": "Activa", "CUIT": "30708313587", "Nombre en AFIP": "YPF S.A WINTENSHALL ENERGIA SA - PAN AMERICAN ENERGY LLC AREA BANDURRIA UTE",
+                -"Nombre Soc SAP": "Ute Santo Domingo I y II", "Código SAP": "0901", "Estado": "Activa", "CUIT": "30713651504", "Nombre en AFIP": "GAS Y PETROELO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA - YPF S.A. - AREA SANTO DOMINGO I Y II UTE",
+                -"Nombre Soc SAP": "UTE CERRO LAS MINAS", "Código SAP": "0918", "Estado": "Activa", "CUIT": "30712188061", "Nombre en AFIP": "GAS Y PETROLEO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA-YPF S.A.-TOTAL AUSTRAL SA SUC ARG-ROVELLA ENERGIA SA-AREA CERRO LAS MINAS UTE",
+                -"Nombre Soc SAP": "UTE ZAMPAL OESTE", "Código SAP": "1046", "Estado": "Activa", "CUIT": "30709441945", "Nombre en AFIP": "YPF S.A EQUITABLE RESOURCES ARGENTINA COMPANY S.A - ZAMPAL OESTE UTE",
+                -"Nombre Soc SAP": "UTE ENARSA 1", "Código SAP": "1146", "Estado": "Activa", "CUIT": "30710916833", "Nombre en AFIP": "ENERGIA ARGENTINA S.A.- YPF S.A.- PETROBRAS ENERGIA S.A.- PETROURUGUAY S.A. UNION TRANSITORIAS DE EMPRESAS E1",
+                -"Nombre Soc SAP": "UTE GNL ESCOBAR", "Código SAP": "1153", "Estado": "Activa", "CUIT": "30711435227", "Nombre en AFIP": "ENERGIA ARGENTINA S.A. - YPF S.A. - PROYECTO GNL ESCOBAR - UNION TRANSITORIA DE EMPRESAS",
+                -"Nombre Soc SAP": "UTE RINCON DEL MANGRULLO", "Código SAP": "1160", "Estado": "Activa", "CUIT": "30714428469", "Nombre en AFIP": "YPF S.A - PAMPA ENERGIA S.A.. UNION TRANSITORIA DE EMPRESAS - RINCON DEL MANGRULLO",
+                -"Nombre Soc SAP": "UTE CHACHAHUEN", "Código SAP": "1164", "Estado": "Activa", "CUIT": "30716199025", "Nombre en AFIP": "YPF S.A.-KILWER S.A.-KETSAL S.A.-ENERGIA MENDOCINA S.A. AREA CHACHAHUEN UNION TRANSITORIA DE EMPRESAS",
+                -"Nombre Soc SAP": "UTE La amarga chica", "Código SAP": "1167", "Estado": "Activa", "CUIT": "30714869759", "Nombre en AFIP": "YPF S.A. - PETRONAS E&P ARGENTINA S.A.",
+                -"Nombre Soc SAP": "UTE EL OREJANO", "Código SAP": "1169", "Estado": "Activa", "CUIT": "30715142658", "Nombre en AFIP": "YPF S.A.- PBB POLISUR S.A., AREA EL OREJANO UNION TRANSITORIA",
+                -"Nombre Soc SAP": "CIA HIDROCARBURO NO CONVENCIONAL SRL", "Código SAP": "1171", "Estado": "Activa", "CUIT": "30714124427", "Nombre en AFIP": "COMPAÑIA DE HIDROCARBURO NO CONVENCIONAL S.R.L.",
+                -"Nombre Soc SAP": "UTE PAMPA (YSUR)", "Código SAP": "1632", "Estado": "Activa", "CUIT": "30711689067", "Nombre en AFIP": "APACHE ENERGIA ARGENTINA S.R.L. - PETROLERA PAMPA S.A., UNION TRANSITORIA DE EMPRESAS - ESTACION FERNANDEZ ORO Y ANTICLINAL CAMPAMENTO"
+
+            **Aclaración sobre lista de sociedades permitidas:**
+            - Cada elemento de la lista hace referencia a una unica sociedad.
+            - Cada apartado de un elemento sirve para identificar a la misma sociedad. Los apartados estan delimitados por ','.
+            - Siempre vas a devolver la sociedad encontrada como se indique en el apartado 'Nombre Soc SAP' de ese elemento.
+            - IMPORTANTE Si la sociedad que encontras no forma parte de esta lista entonces NO se debe incluir el dato obtenido.
+
+            **Ejeplo: Si encontras el valor '30715142658' que corresponde al campo 'CUIT' del elemento cuyo campo 'Nombre Soc SAP' es 'UTE EL OREJANO' y entonces devolves el valor 'UTE EL OREJANO'.
+
+            **Salida esperada:**
+            - Se espera que los datos de salida sean en formato json.
+            - La estructura de los datos debe ser:
+                "file_name":str    #Asunto del mail del que extrajiste los datos
+                "fields": []    #Array con los datos extraídos del mail
+                "missing_fields": []    #Array con los datos no encontrados en el mail. Solo indicar nombre del campo.
+                "error": []     #Siempre vacío
+            - Se puede tener mas de una consulta en el mismo mail, de ser asi se debe generar una salida para cada una. Un buen indicador de este escenario es reconocer multiples facturas.
             """,
         ),
         MessagesPlaceholder(variable_name="messages"),
     ]
 )
+
+"""
+Aclaraciones:
+Notas pedido de devolucion de retenciones: Debe contener el texto "dichas retenciones no se computaron ni se computaran" matchear por similitud. En caso de no contenerlo rechazar la lectura del archivo.
+Siempre viene adjunto con el certificado de retenciones, no se hacen extracciones sobre este archivo.
+Debe tener firma del proveedor sino rechazar la extracción de datos.
+
+Pedido de OP y o retenciones: Se suele deja el numero de factura, la razon social del proveedor y la sociedad de YPF.
+
+Formato de factura para SAP
+0001A00000058
+En caso de no tener todos los numeros completar con ceros si se tiene 58
+00000058
+Se complementa la busqueda con la fecha o la sociedad de YPF.
+
+Se pueden referir a la factura como documento, comprobante, certificado
+"""

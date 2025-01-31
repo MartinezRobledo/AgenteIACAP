@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-        "cap_agent": "./src/agents/agentCleaner.py:cleaner"
+        "cap_agent": "./src/agents/agentExtractor.py:extractor"
     }
 }

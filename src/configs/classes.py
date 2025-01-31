@@ -24,7 +24,7 @@ class Mail(TypedDict):
 class Input(TypedDict):
     asunto:str
     cuerpo:str
-    adjuntos:str
+    adjuntos:list
 
 class Output(TypedDict):
     categoria:str

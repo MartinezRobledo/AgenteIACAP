@@ -8,19 +8,19 @@ clean = cleaner_definition | llm4o_mini
 
 # Defino nodes
 def clean_body(state: Input) -> Input:
-    if not isinstance(state, Input):
-        raise TypeError("El estado debe ser una instancia de la clase Input.")
+    # if not isinstance(state, Input):
+    #     raise TypeError("El estado debe ser una instancia de la clase Input.")
     cuerpo_filtrado = clean.invoke([HumanMessage(
         content = f"""Limpia el siguiente mail:\n
-            {state.cuerpo}
+            {state["cuerpo"]}
         """
     )])
     if not hasattr(cuerpo_filtrado, "content"):
         raise AttributeError("El objeto retornado por clean.invoke no tiene el atributo 'content'.")
-    return Input(asunto=state.asunto, cuerpo=cuerpo_filtrado.content, adjuntos=state.adjuntos)
+    return Input(asunto=state['asunto'], cuerpo=cuerpo_filtrado.content, adjuntos=state['adjuntos'])
 
 def clean_attachments(state: Input) -> Input:
-    if len(state.adjuntos) == 0:
+    if len(state["adjuntos"]) == 0:
         return state
     
     return state

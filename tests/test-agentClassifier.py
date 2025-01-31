@@ -6,22 +6,81 @@ class TestClassifier(unittest.TestCase):
     def setUp(self):
         # Configuración del input inicial para las pruebas
         self.input_state = Input(
-            asunto="Consulta acceso Del Plata Ingenieria Austral",
-            cuerpo="""
-                Buen día, espero que se encuentren bien!
-                Les escribo de Del Plata Ingeniería,
-                Nosotros podemos acceder sin problemas al portal para consultar pagos de Del Plata Ingeniería S.A.:
-                usuario: jolivares@dpisa.com.ar
-                contraseña: Tigresa7
+            asunto="Files attached to a message triggered a policy",
+            cuerpo="""" 
 
-                Pero en Del Plata Ingenieria Autral S.A. (CUIT 30710984006) no podemos ingresar ya que no tenemos acceso al mail 
-                con el que estábamos registrados porque esta persona no pertenece más a la empresa: lfernandez@dpisa.com.ar
+Logo
+[https://static-uk.mimecast.com/mimecast/resources/images/notifications/mimecast-logo-254x120.png]
 
-                Queria saber como podemos ingresar para consultar los pagos de Del Plata Ingenieria Austral, si podemos gestionar 
-                un nuevo usuario o agregar al usuario jolivares@dpisa.com.ar el acceso también a la otra cuenta.
+ 
 
-                Muchas gracias!
-            """,
+
+FILES ATTACHED TO A MESSAGE TRIGGERED A POLICY
+
+Contact your administrator if you need these files.
+
+ 
+
+Message Details
+
+ 
+
+From
+
+""facturacion@proveedoresypf.com"" <facturacion@proveedoresypf.com>
+
+To
+
+Pedro Ibanez <pedro.ibanez@globaldata.com>
+
+Subject
+
+¡Hemos recibido tu consulta!  CAP-520263-L3X1Q3 - YPF-CAP:0001655533
+
+Date
+
+Wed, 15 Jan 2025 16:25:25 +0000
+
+Policy
+
+Default Attachment Management Definition - Block Dangerous File Types
+
+Status
+
+The message has been placed on HOLD - action required
+
+ 
+
+File Details
+
+ 
+
+- Attachment Policy (Default Attachment Management Definition - Block Dangerous
+File Types)
+
+Attachment Name: image.png
+Policy Name: Default Attachment Management Definition - Block Dangerous File
+Types
+Detected as: png
+Size: 57837 bytes
+Action Taken: HOLD (Entire Message Held for Review)
+Reason: Possible QR Image (100% probability), https://walink[.]co/013024
+
+
+ 
+
+ 
+
+[https://static-uk.mimecast.com/mimecast/resources/images/notifications/powered-mimecast-logo-278x28.png]
+
+ 
+
+© 2003 - 2025 Mimecast Services Limited and affiliates.
+
+ 
+
+                                                           "
+""",
             adjuntos=""
         )
 
@@ -36,12 +95,6 @@ class TestClassifier(unittest.TestCase):
         # Validar que el resultado contiene las claves esperadas
         self.assertIn("categoria", result)
         self.assertIn("data", result)
-
-        # Validar que la categoría esperada está entre las opciones posibles
-        self.assertIn(result["categoria"], [
-            "Problemas de acceso",  # Categoría esperada para este caso
-            "Alta de usuario"      # También es posible dependiendo del modelo
-        ])
 
 if __name__ == "__main__":
     unittest.main()

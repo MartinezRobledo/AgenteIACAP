@@ -1,71 +1,62 @@
 import asyncio
+import base64
 import json
+import os
+import glob
 import pandas as pd
 from tabulate import tabulate
 from src.configs.classes import Input
 from src.agents.agentExtractor import extractor
+from src.services.tools.convert_pdf import pdf_page_to_base64
 
-INPUT_FILE = "D:\\Python\\agents\\tests\\Casos categorizados - Extracción - 310125_categorizados.xlsx"
-OUTPUT_FILE = "D:\\Python\\agents\\tests\\Casos - Extracción_resultados_310125.xlsx"
+INPUT_FILE = "D:\\Python\\agents\\tests\\Casos.xlsx"
+OUTPUT_FILE = "D:\\Python\\agents\\tests\\Casos - Extracción_resultados_03022025.xlsx"
 
 async def process_excel():
     # Cargar el archivo Excel
     df = pd.read_excel(INPUT_FILE)
     
     # Verificar que tenga las columnas necesarias
-    if not {'Asunto', 'Cuerpo'}.issubset(df.columns):
-        raise ValueError("El archivo Excel debe contener las columnas 'Asunto' y 'Cuerpo'")
+    if not {'Asunto', 'Cuerpo', 'IDCaso'}.issubset(df.columns):
+        raise ValueError("El archivo Excel debe contener las columnas 'Asunto', 'Cuerpo' e 'IDCaso'")
     
     # Crear listas separadas para cada campo
-    customer_names = []
-    customer_tax_ids = []
-    invoice_ids = []
-    vendor_tax_ids = []
+    results = []
 
     for index, row in df.iterrows():
-        input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos={})
+        case_id = row['IDCaso']
+        adjuntos_path = f"D:\\Python\\agents\\tests\\Casos_de_adjuntos\\{case_id}"
+
+        
+        adjuntos_list = []
+        if os.path.exists(adjuntos_path):
+            print("DEBUG - path exists")
+            for file_path in glob.glob(os.path.join(adjuntos_path, '*')):
+                if file_path.lower().endswith('.pdf'):
+                    print("DEBUG - file path: ", file_path)
+                    for page_number in range(1, 2):
+                        base64_image = pdf_page_to_base64(file_path, page_number)
+                        if base64_image:
+                            adjuntos_list.append({"file_name": f"{os.path.basename(file_path)}_page_{page_number}.png", "base64_content": base64_image})
+                elif file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    with open(file_path, "rb") as image_file:
+                        encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                        adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
+        
+        input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
     
         # Invocar el extractor
         result = await extractor.ainvoke(input_data)
-        
-        # Extraer solo los campos de interés
-        extractions = result.get("extractions", [])
-        
-        # Asegurar que `extractions` es una lista de diccionarios
-        if isinstance(extractions, list) and all(isinstance(item, dict) for item in extractions):
-            fields = extractions[0].get("fields", {}) if extractions else {}
+        extractions = result.get("extractions", {})
+        results.append(extractions)
+        print(f"Fila {index} procesada correctamente.")
 
-            customer_names.append(fields.get("customer_name", ""))
-            customer_tax_ids.append(fields.get("customer_tax_id", ""))
-            invoice_ids.append(fields.get("invoice_id", ""))
-            vendor_tax_ids.append(fields.get("vendor_tax_id", ""))
-        else:
-            customer_names.append("")
-            customer_tax_ids.append("")
-            invoice_ids.append("")
-            vendor_tax_ids.append("")
-        
-        print(f"""Resultado fila {row}:\n
-              "customer_names": {customer_names[-1]}; "customer_tax_ids": {customer_tax_ids[-1]}; "invoice_ids": {invoice_ids[-1]}; "vendor_tax_ids": {vendor_tax_ids[-1]}""")
+    # Agregar la columna "Extracción" en la primera columna disponible
+    if "Extracción" not in df.columns:
+        df.insert(len(df.columns), "Extracción", None)
     
-    # Agregar la columna "Customer Name" en la primera columna disponible
-    if "Customer Name" not in df.columns:
-        df.insert(len(df.columns), "Customer Name", None)
-    # Agregar la columna "Customer Tax ID" en la primera columna disponible
-    if "Customer Tax ID" not in df.columns:
-        df.insert(len(df.columns), "Customer Tax ID", None)
-    # Agregar la columna "Invoice ID" en la primera columna disponible
-    if "Invoice ID" not in df.columns:
-        df.insert(len(df.columns), "Invoice ID", None)
-    # Agregar la columna "Vendor Tax ID" en la primera columna disponible
-    if "Vendor Tax ID" not in df.columns:
-        df.insert(len(df.columns), "Vendor Tax ID", None)
-    
-    # Agregar las columnas al DataFrame
-    df["Customer Name"] = customer_names
-    df["Customer Tax ID"] = customer_tax_ids
-    df["Invoice ID"] = invoice_ids
-    df["Vendor Tax ID"] = vendor_tax_ids
+    # Agregar las columna al DataFrame
+    df["Extracción"] = results
     df.to_excel(OUTPUT_FILE, index=False)
     print(f"Resultados guardados en {OUTPUT_FILE}")
 
@@ -169,7 +160,7 @@ Saludos.
         """, adjuntos=[])
         
         # Invocar el extractor
-        result = await extractor.ainvoke({"aggregate": [], "text": "", "images": "", "pdfs": "", "others": "", "input_value": input_data})
+        result = await extractor.ainvoke(input_data)
         
         # Extraer solo los campos de interés
         extractions = result.get("extractions", [])

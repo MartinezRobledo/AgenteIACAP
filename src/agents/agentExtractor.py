@@ -45,15 +45,15 @@ class ClassifyNode:
 
 class ImageNode:
     async def __call__(self, state: State) -> Any:
-        # extractor = ImageFieldExtractor()
-        # result = extractor.extract_fields(base64_images=state["images"], fields_to_extract=fields_to_extract)
-        result = process_base64_files(base64_files=state["images"], fields_to_extract=fields_to_extract)
+        extractor = ImageFieldExtractor()
+        result = extractor.extract_fields(base64_images=state["images"], fields_to_extract=fields_to_extract)
+        # result = process_base64_files(base64_files=state["images"], fields_to_extract=fields_to_extract)
         return {"aggregate": [result]}
 
 class PdfNode:
     async def __call__(self, state: State) -> Any:
         result = process_base64_files(base64_files=state["pdfs"], fields_to_extract=fields_to_extract)
-        return {"aggregate": [result]}
+        return {"aggregate": [{"fields": result, "source": "pdf"}]}
 
 class NamesAndCuitsNode:
     async def __call__(self, state:State) -> Fields:
@@ -74,19 +74,34 @@ class InvoiceNode:
 
 class MergeFieldsNode:
     async def __call__(self, state: Fields) -> State:
-        missing_fields = fields_to_extract
-        merge = {"fields":state, "missing_fields":[], "error":""}
+        missing_fields = []
+        for field in fields_to_extract:
+            if field not in state:
+                missing_fields.append(field)
+        merge = {
+            "Mail":{
+                "invoice_number": 1,
+                "fields":state, 
+                "missing_fields":missing_fields, 
+                "error":""
+            },
+            "source": "text"
+        }
         return {"aggregate": [merge]}
 
-# Fuerzo la salida a Merger
-def router(state:State) -> Sequence[str]:
-    return ["merger"]
+# Analizo todo los adjuntos si los hay
+def router(state: State) -> Sequence[str]:
+    # if :
+    print("DEBUG - router GO TO images")
+    return ["extract from images"]
+    # print("DEBUG - router GO TO merger")
+    # return ["merger"]
 
 def merge_results(state: State) -> OutputState:
     """
     Combina los resultados de imágenes y archivos en un único diccionario de extracciones.
     """
-    return {"extractions": state["aggregate"]}
+    return {"extractions":state['aggregate']}
 
 
 # Construcción del grafo

@@ -1,0 +1,359 @@
+{ 
+"$content":Received: from RO2P215MB1923.LAMP215.PROD.OUTLOOK.COM (2603:10d6:10:c4::8) by
+ SCYP215MB2459.LAMP215.PROD.OUTLOOK.COM with HTTPS; Fri, 10 Jan 2025 14:09:32
+ +0000
+Received: from BN9PR03CA0938.namprd03.prod.outlook.com (2603:10b6:408:108::13)
+ by RO2P215MB1923.LAMP215.PROD.OUTLOOK.COM (2603:10d6:10:c4::8) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.8335.13; Fri, 10 Jan 2025 14:09:26 +0000
+Received: from MN1PEPF0000F0E2.namprd04.prod.outlook.com
+ (2603:10b6:408:108:cafe::e7) by BN9PR03CA0938.outlook.office365.com
+ (2603:10b6:408:108::13) with Microsoft SMTP Server (version=TLS1_3,
+ cipher=TLS_AES_256_GCM_SHA384) id 15.20.8335.12 via Frontend Transport; Fri,
+ 10 Jan 2025 14:09:25 +0000
+Received: from esa.hc5599-55.iphmx.com (216.71.152.193) by
+ MN1PEPF0000F0E2.mail.protection.outlook.com (10.167.242.40) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.8335.7 via Frontend Transport; Fri, 10 Jan 2025 14:09:23 +0000
+Received: from mail-bn8nam11lp2177.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.177])
+  by ob1.hc5599-55.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jan 2025 11:09:22 -0300
+Received: from CPUP152MB6542.LAMP152.PROD.OUTLOOK.COM (2603:10d6:103:1fe::13)
+ by SCZP152MB6349.LAMP152.PROD.OUTLOOK.COM (2603:10d6:300:68::14) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8335.13; Fri, 10 Jan
+ 2025 14:09:18 +0000
+Received: from CPUP152MB6542.LAMP152.PROD.OUTLOOK.COM ([::1]) by
+ CPUP152MB6542.LAMP152.PROD.OUTLOOK.COM ([fe80::760d:e2fc:eec5:2a59%4]) with
+ Microsoft SMTP Server id 15.20.8335.012; Fri, 10 Jan 2025 14:09:18 +0000
+From: RECEPCION DE FACTURAS <recepciondefacturas@ypf.com>
+To: Laura Galeazzi <laura.galeazzi@qtrue.com.ar>
+Subject: RE: [EXTERNO] YPF SA-QUIMICA TRUE SACIF
+Thread-Topic: [EXTERNO] YPF SA-QUIMICA TRUE SACIF
+Thread-Index: AdtjaS9XSICnuqauRQqoUn3gtRbpLgAAA4Av
+Date: Fri, 10 Jan 2025 14:09:18 +0000
+Message-ID: <69cd042fe6eb4b86b213f1d9c61194be@CPUP152MB6542.LAMP152.PROD.OUTLOOK.COM>
+References: <SCYP215MB2459A2E79193D3380902A5FEAD1C2@SCYP215MB2459.LAMP215.PROD.OUTLOOK.COM>
+In-Reply-To: <SCYP215MB2459A2E79193D3380902A5FEAD1C2@SCYP215MB2459.LAMP215.PROD.OUTLOOK.COM>
+Content-Language: es-ES
+X-MS-Exchange-Organization-AuthSource: MN1PEPF0000F0E2.namprd04.prod.outlook.com
+X-MS-Has-Attach:
+X-Auto-Response-Suppress: All
+X-MS-Exchange-Organization-Network-Message-Id: 781a4994-2ebb-4434-0217-08dd31806312
+X-MS-Exchange-Inbox-Rules-Loop: recepciondefacturas@ypf.com
+X-MS-TNEF-Correlator:
+X-MS-Exchange-Organization-RecordReviewCfmType: 0
+x-ms-publictraffictype: Email
+received-spf: Pass (protection.outlook.com: domain of ypf.com designates
+ 216.71.152.193 as permitted sender) receiver=protection.outlook.com;
+ client-ip=216.71.152.193; helo=esa.hc5599-55.iphmx.com; pr=E
+x-ms-exchange-organization-originalclientipaddress: 216.71.152.193
+x-ms-exchange-organization-originalserveripaddress: 10.167.242.40
+authentication-results: spf=pass (sender IP is 216.71.152.193)
+ smtp.mailfrom=ypf.com; dkim=pass (signature was verified)
+ header.d=ypf.com;dmarc=pass action=none header.from=ypf.com;compauth=pass
+ reason=100
+x-forefront-antispam-report: CIP:216.71.152.193;CTRY:US;LANG:es;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:esa.hc5599-55.iphmx.com;PTR:esa.hc5599-55.iphmx.com;CAT:NONE;SFS:(13230040)(12012899012)(2092899012)(3072899012)(35042699022)(8096899003);DIR:INB;
+x-ms-office365-filtering-correlation-id: 781a4994-2ebb-4434-0217-08dd31806312
+x-ms-traffictypediagnostic: CPUP152MB6542:EE_|SCZP152MB6349:EE_|MN1PEPF0000F0E2:EE_|RO2P215MB1923:EE_|SCYP215MB2459:EE_
+x-microsoft-antispam: BCL:0;ARA:13230040|12012899012|2092899012|3072899012|35042699022|8096899003;
+x-ms-exchange-crosstenant-originalarrivaltime: 10 Jan 2025 14:09:23.5740 (UTC)
+x-ms-exchange-crosstenant-fromentityheader: Internet
+x-ms-exchange-crosstenant-id: 1cb825b4-4e95-4194-b9a2-dd4a70edb1aa
+x-ms-exchange-crosstenant-network-message-id: 781a4994-2ebb-4434-0217-08dd31806312
+x-ms-exchange-transport-crosstenantheadersstamped: RO2P215MB1923
+arc-seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=Ydunnc8/AsBj5lQFU1QwL+GoHJdSWkYu1z2sO2/SF8DxHmtGqDJHliZmL4cg+3JTAciKs4c+qKxl4usN525Qd3vJF6YvWvrVWk2dY+NkNViMwpAkO8nUUI8Z0DBvQVNwub6tMp6A44wW+bEwUDnXz4aJYgDnUZG0h9TjTwSvQTn/vSA5K6j/r/Pj9Rmssn/yjIEWajcjnDtqLh8xStszfcmAKfhw/9dQ5JdtzDT0vXtrjIwBOS+F8F34JkdEOyA267b+5ugKcyahNfqbXhzgYoLMne5WwogX8OaL1qP95LDMhLrDCbYiWL0pi7r+AqnC8fBC0f6JLV1k7XeXKFduSw==
+arc-message-signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=7ToEkIK9drK9gPPhs4OkGt7WTgaCS8elv/Ke2Ti5LPg=;
+ b=y7FRqbOmukPa726b/rkmWrz7ptO9VUITK1K9c2D4xs+koC4r2SeGyJ7sv+PXXUplN9hgUatAM1/BT6Kta+c0hfo7BVt3AeTgyxOJFoNbLD2sG0g8GuE734qVtNxslgCTPBZZ55W5hzmRkyRN9IrqWgRGQOG784tSrQ5JlhobRu1ZfQfN16waHw8VVFv8Eygu2uinWdKhD66ruATDqzBXTs4PXZeJkoXfQBMOYVp+DtcYL7g2T/OZ0EVor3Dv5YG4+6m9Rz8tYpV8Cu/qFIqUmw51KTNZVHU8qqyIz3bUUQ1qDNsEvktLJMaWbjvbGbudFITqaIadChm3+u7Pn/AYvw==
+arc-authentication-results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=ypf.com; dmarc=pass action=none header.from=ypf.com; dkim=pass
+ header.d=ypf.com; arc=none
+dkim-signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ypf.com; s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=7ToEkIK9drK9gPPhs4OkGt7WTgaCS8elv/Ke2Ti5LPg=;
+ b=AGTggouPF5zMGZomXGpqNdq7HJ21azJP+M5botykhe+FO9xmB9rZEPGt+jpsKYjNZN3zo+IPSsLy36r7nB5hh/oHw9K+jy9pkB5+QAmUtUHYdap4/IqZb0w3IwJPDEUE+PrZi774fLT7oWkhO5T2gKq3GXd0n+dKxsb+bkNH/13o4G2rNAL6iboG7eIPANgXm5OhzKzuQOR2IsMgQOHb8Gd9OOO6RU7m5OVQNjGCro9oksx6Zpwe934Ivt9NbRtRYSnnSX0AVxBwCJm1NBuo1sd5ibzvUgT4RjQkgE5XaC5Uot2Ua9mAEZAEcacztJfd4eGf3gxGYtAXowGhDo8XzA==
+x-eopattributedmessage: 0
+x-eoptenantattributedmessage: 1cb825b4-4e95-4194-b9a2-dd4a70edb1aa:0
+x-microsoft-antispam-untrusted: BCL:0;ARA:13230040|10070799003|376014|1800799024|366016|8096899003;
+x-microsoft-antispam-message-info-original: =?Windows-1252?Q?yR748z4SlIhtbSM8mwGjy+daVhaEET6HEbWBRcMyfGBKQBexT6PB0j9Q?=
+ =?Windows-1252?Q?21ZhrhbOyCShK01YFa4zoQ7VPdwXHqDjFZvBFjE622kmzhIHUzFNPom1?=
+ =?Windows-1252?Q?PL9fAiQ++Mat4+M1cKuBIfVA7IMHcUL38EN1+mXGb+/02x/mCf3Bik3O?=
+ =?Windows-1252?Q?3g8vR8NIiPgIROodzNvghf2iB7OQRU6rAaiRO/6WwxQ2rWWfyb2eUSPv?=
+ =?Windows-1252?Q?DaQLSq3tIujEYipruL3uHeK4yjMoYCQYR9fOFWFhKEsf36X5ngTNRGUx?=
+ =?Windows-1252?Q?3ZWrwuW0l651JKIrKDKqba7j9RPu6n75GoYivXT9LcURLx52NPHgQloA?=
+ =?Windows-1252?Q?4vHy96LTH2zPDQJQM+Uq5y7Sl4+S1Ja3dlJgcvByT6Lksfo/kQvDqEhT?=
+ =?Windows-1252?Q?pa8Z79OR4UYztxAqYQ0eguFaSVsM+wMGfKcC3eL8wTze/VuHbrK+4bSn?=
+ =?Windows-1252?Q?Jcc1udHEBzwlVBs8UIzybHTeqKq8arwltXceRefbvXStVNBGZzkxM23X?=
+ =?Windows-1252?Q?rJmkf8O16INtt4aHO2NzXTf38RN8Pklk9q0JfTtS0MfmxOMkE6a3g4hY?=
+ =?Windows-1252?Q?rTcidv+DND4VO+iRPHEFDhEKgSLsVTGfNwUwgjJcozfG6Y1yKwzW34cI?=
+ =?Windows-1252?Q?+LZW/axAjfTpRtgTj8SeEHb4ufjY841H7WerElAe8gL89KYxaYuG1zO4?=
+ =?Windows-1252?Q?WGOQaE7wTqjxWa1VPrfIKcMsrK1DqB2BvAX4qXaIlJ7UGI4/A+U9eyF9?=
+ =?Windows-1252?Q?zx3tmVmmSRK0ilVwhUL0UxF/oiDe9PrnSU3OB+gPg0hyXlu6VWLpXh57?=
+ =?Windows-1252?Q?oemqTrvDNakkr1BDVC6pMottMi4FZVstzWAfwOYn5cpFlFljbZvb6eo5?=
+ =?Windows-1252?Q?FtV3o8OHoo74tMeDO+WigNI4d0oYbgs3aikkduNTS7KjfGaXCqvdb1Kx?=
+ =?Windows-1252?Q?D34leSHf0ofDrPbqDfUWE+oRK0gqNtxdVwjK2AjdpL7CfAomWWvjpYJC?=
+ =?Windows-1252?Q?ur/XEyXSmrYu/IL1g/fYyqjbHDSLNVzWDDW96LvQOkgzUS8T2E1RQbo6?=
+ =?Windows-1252?Q?VzCWMrAryJ1ObtTarexz0XoMEyr2/XW5ddmWFwTyXnlrAaWaC/je3Sj8?=
+ =?Windows-1252?Q?MxU2DV8WxKZ6yCJznxGX7Y6pntuccDnn4fN5IjmYMhzTiG3jzZqdwvZt?=
+ =?Windows-1252?Q?yzzBAp+gaDeuJopRqkkM1aJP30KnWKUuzF1/m22p06yR7yODiRsRyRUJ?=
+ =?Windows-1252?Q?l6Rgj9QgKj3BvnYztyaeVkzuaP21eIgRJdQjuPWxYpJ2qa01M73bP9j+?=
+ =?Windows-1252?Q?bS5UmGkeu8iHXDZZUoIwEgYWL9NT3piQi6rv8Dy/Hi/e2121ZShm+6c9?=
+ =?Windows-1252?Q?0beN6f/zYk+Ms9iu1upRmXAq1H3CMUnyOaGoGYPwyar4A6BKK1+N0+qX?=
+ =?Windows-1252?Q?J27KaXn/8Us38YQ9F/Ig3Faz4hTCDEnxZJ8TU4EACICZXyvJKWh2F2Iz?=
+ =?Windows-1252?Q?oywXI0mj?=
+x-ms-exchange-transport-crosstenantheadersstripped: MN1PEPF0000F0E2.namprd04.prod.outlook.com
+x-ms-office365-filtering-correlation-id-prvs: 4056e9df-6a89-4cc4-2158-08dd31805fd2
+x-ms-exchange-senderadcheck: 1
+authentication-results-original: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=ypf.com;
+x-forefront-antispam-report-untrusted: CIP:255.255.255.255;CTRY:;LANG:es;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:CPUP152MB6542.LAMP152.PROD.OUTLOOK.COM;PTR:;CAT:NONE;SFS:(13230040)(10070799003)(376014)(1800799024)(366016)(8096899003);DIR:OUT;SFP:1101;
+x-ms-exchange-transport-endtoendlatency: 00:00:08.9966954
+x-ms-exchange-processed-by-bccfoldering: 15.20.8335.010
+x-ms-exchange-atpmessageproperties: SA|SL
+x-ms-exchange-crosstenant-authsource: MN1PEPF0000F0E2.namprd04.prod.outlook.com
+x-ms-exchange-crosstenant-authas: Anonymous
+auto-submitted: auto-generated
+x-ms-exchange-antispam-messagedata-original-chunkcount: 1
+x-ms-exchange-antispam-messagedata-original-0: ipjyhLzHNQ5EhxvBQaPPM+RB9+cX066nScLe7jSziMBtV8gHMkD97jBc3Rk8HEhxuwiq2IJIqEGtWf4ZG5E96MISq/2RyKg1iSoHiSEnehOcsukjCvbsfsgo/paBU+VWlYxs9UC/1ii9Z+ZwGxiFLtUuqDvl58pBTFmlFsXuCVoLtGbno6DGxYdLNiBxWG8oZWCqu1F3IWIf4HY7Y1ASYO5SoKlPzDJFtTrz+9rbus9l49rYWCxuptyoHFwOdUwYJ5MKhXGu6vhtfGiXa5ebGaRD4DcW49b7EPRPp6VV5HHjydDFVYylv/68kXt6d9OX
+x-ms-exchange-antispam-relay: 0
+X-Microsoft-Antispam-Mailbox-Delivery: ucf:0;jmr:0;auth:0;dest:I;ENG:(910001)(944506478)(944626604)(920097)(930097)(140003);
+X-Microsoft-Antispam-Message-Info: =?Windows-1252?Q?HIcdEOhnRNLreJilCqINAKRTHC538ugFZsBvIpRGvWeDs5zxpgMsz4yr?=
+ =?Windows-1252?Q?lyZ6Ce9WXAoMQhE3KkvLOrM9Ti31BXOVH7HE3SHhF5Hg5WiCw+fGQcef?=
+ =?Windows-1252?Q?TM5Ct4DKUUFxFr1q6SFjrYCN1fyYfwXlQWVl0VBtzvi2OBmwbHH36IHJ?=
+ =?Windows-1252?Q?atn74Q7X4CJSdEhXIbFzQTw4unB717zSjdSU3JAe418GV7xePMrPKpdu?=
+ =?Windows-1252?Q?tLDQLrH4eN7C2h0YvTYzCPbtu/ySdWlRBUoJN9VAG8eyOnYYImF4AEy3?=
+ =?Windows-1252?Q?l9DsRQB5QNoZfXeiH3e5BrNwehSZ2UzqgQH+03yMqDeYuHSkGTDx8jVB?=
+ =?Windows-1252?Q?yViQ14ySIcZXK5vKM6Lu8HsWXNn8aja3oQ4KLBMwTJ+92XbvMUYlqKu5?=
+ =?Windows-1252?Q?KDtwyT/SxZHnEdXZkm2wKcW+gEqvM+K4Oi8i6xe5lsuqVfbymyz/2q6j?=
+ =?Windows-1252?Q?4XJNCIz0myFdsRJCfNEUiN9oy+/TpkL4295PtENdb4XePCJoM63sliaK?=
+ =?Windows-1252?Q?ypVJvNSvqCV6NJM0kHEWmQdiOuBixyNtWVCIKyRwIK5el9/hfbUxwnbT?=
+ =?Windows-1252?Q?Iw64gbKQDgDQUywQ2XInJzMWCRhkf5Dv7u16bshzxU4c3uWTcM4CX8j9?=
+ =?Windows-1252?Q?0h0eehuDKcS+OkUemucelzo84ctUJJQOVTcKSGeZN3H30gw61xP/1S0E?=
+ =?Windows-1252?Q?HvfKScF+rvb6545tGFGZjsksBVz1lCd4wqxMv6ZC2Ku6kLF7e6xCV3gC?=
+ =?Windows-1252?Q?bkOZJ21y0pnxXNu6aeAX3SL3UcJo32hQVjvXjxCKLAMqr9DBHAJIfBjs?=
+ =?Windows-1252?Q?NGQPdJGipnGBCLGFqrKi1DfgXwB7Vlvfo55tBeMFn4NWe6XnoiK255q4?=
+ =?Windows-1252?Q?E5tfybn7uOlBNeZIEWx6PYX9zjJFM/s0SYXVKBzoCeLqoCNUlAKpnCSz?=
+ =?Windows-1252?Q?/1hVdgCG0VdTQo2TxhKwh0PhcGsS0HuMaYGh4vqgdNp3tazmKAnmooT+?=
+ =?Windows-1252?Q?HWaQqQdK+M+7+2aDi0TWVsm2hTr1tHrEYioD4agsitJve75TN6vjGX8p?=
+ =?Windows-1252?Q?ITzGSKDjMj2eee7hbv6jsUEECyHc5jt91N/sv6EXe3LC7ksX8Vaq52LY?=
+ =?Windows-1252?Q?csuX5acKwX1TCURP04jvasV+dFoTxbAi+CdVIRyh4CY5YPvHi7AKfBqD?=
+ =?Windows-1252?Q?YJWFhwoQN8GaEnhu9mNjA2jrs0avWRaehS40dfXbRsDLWlmtmAZf/ILL?=
+ =?Windows-1252?Q?ppKMOdakgbqC0eUH+i1BvMu/ambXz/7JJa+FVY4j4onKFeBOw9dTuHFw?=
+ =?Windows-1252?Q?WlQ2R15beWzJg5XiGAGCcBextkL9yBK2syP5EhYUb4tIhs/8D950Fh2w?=
+ =?Windows-1252?Q?awDuPuyo3PsLdxR250wmMBgVNvFuWlAqjjAlf2XW/1o3XTfoDwnJuzUE?=
+ =?Windows-1252?Q?I8lWfptoNVZmuAxV/oXhiiyxIDNxSbtUfTiVdWUApLfzvu7DNLLdHM2l?=
+ =?Windows-1252?Q?oxeg2RFyIkhxCZOX212WTMQS6rHj6F+F8T81nBug253KMp+dyRPwPqFR?=
+ =?Windows-1252?Q?ceJxyaoTCZYiSg/YM31c3oqqd294Y7GMFZr7i4Q6fhw0J2xV8OgZ8ly2?=
+ =?Windows-1252?Q?WWaC1Se4zSiSB/R2XYFWRF1HjRyp21LyJDtTkXFPuwMq7rcJGptO9pqF?=
+ =?Windows-1252?Q?lpVmKIEkgV7Dwa6Hgvz7yI0KER5+omoHqgbyhpNf0X3pwz96Dc3bpDbN?=
+ =?Windows-1252?Q?FSh6MGm7urFvMrvKJD+ROg3nC+qlS8qYAKKq5MsD8FZ+FWCKC1EDj0xm?=
+ =?Windows-1252?Q?y55gM1l7MgNnOsGR0zbL6QvLHSCZSvWi5cXcA2x0+rxHusuEnJv1YKoV?=
+ =?Windows-1252?Q?JwiazYJYNENmClYANsYTGYrDbNBP/Prb/4lQlTIwRUPpODW87WY/U9m6?=
+ =?Windows-1252?Q?w6MOCg2LHcs59903I4m8rT4EwoM6Ap5t4JfvgS6bK6o5pR8NYBT9nW25?=
+ =?Windows-1252?Q?piUwIYty6jeu/b5uxAhjrp9y39jdXDvY52pnmUk3C2bJPE3nFbaNDszK?=
+ =?Windows-1252?Q?nuu2ObP1DPTexlOsusELlJGrQwmDWlnK7oRh2v1mfdWFyo3CeXLAB/6H?=
+ =?Windows-1252?Q?3uJ2p/o21RHkbAqqeezI4KXpT+eK2KRPhFqAu0O9Rb50GOcr+GT9MhMI?=
+ =?Windows-1252?Q?rbBPO8TF+dc=3D?=
+Content-Type: multipart/alternative;
+	boundary="_000_69cd042fe6eb4b86b213f1d9c61194beCPUP152MB6542LAMP152PRO_"
+MIME-Version: 1.0
+
+--_000_69cd042fe6eb4b86b213f1d9c61194beCPUP152MB6542LAMP152PRO_
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+***Este mensaje es de una fuente externa a la empresa. Por favor tenga cuid=
+ado abriendo archivos adjuntos, haciendo click en los enlaces o respondiend=
+olo.***
+
+
+
+Su mail ha sido recibido, por favor tener en cuenta que el mismo no implica=
+ conformidad de los documentos all=ED incluidos. Ante cualquier consulta co=
+municarse al Call Center de Atenci=F3n a Proveedores 0810-122-9681 y/o a tr=
+av=E9s de nuestra p=E1gina www.ypf.com<https://outlook.office365.com/mail/r=
+ecepciondefacturas@ypf.com/options/mail/www.ypf.com> apartado de preguntas =
+frecuentes
+
+
+
+Le comunicamos que a partir del 01/07/21 el =FAnico buz=F3n habilitado para=
+ la recepci=F3n de facturas/notas de d=E9bito para todas las sociedades ser=
+=E1 el siguiente:  recepciondefacturas@ypf.com<mailto:recepciondefacturas@y=
+pf.com>
+
+
+
+Recuerde enviar las facturas en formato legible y con las caracter=EDsticas=
+ definidas en la web de proveedores https://www.ypf.com/Proveedores/Paginas=
+/Pago-a-proveedores-preguntas-frecuentes.aspx. Verifique los certificados e=
+ informaci=F3n impositiva antes de facturar en https://www.ypf.com/Proveedo=
+res/Paginas/Certificados-e-informacion-impositiva.aspx. Evite rechazos.
+
+
+
+Respuesta Autom=E1tica, este buz=F3n no responde mensajes enviados
+
+
+
+AVISO LEGAL: Esta informaci=F3n es privada y confidencial y est=E1 dirigida=
+ =FAnicamente a su destinatario. Si usted no es el destinatario original de=
+ este mensaje y por este medio pudo acceder a dicha informaci=F3n se le pid=
+e gentilmente que elimine el presente mensaje. La distribuci=F3n o copia de=
+ este mensaje est=E1 estrictamente prohibida. Esta comunicaci=F3n es s=F3lo=
+ para prop=F3sitos de informaci=F3n y no debe ser considerada como una prop=
+uesta, aceptaci=F3n ni como una declaraci=F3n de voluntad de parte del pers=
+onal de YPF S.A. La transmisi=F3n de mensajes por medio del servicio de men=
+sajer=EDa electr=F3nica corporativa no est=E1 exenta de errores. Por consig=
+uiente, no manifestamos que esta informaci=F3n sea completa o precisa. Toda=
+ informaci=F3n est=E1 sujeta a alterarse sin previo aviso. Ante cualquier i=
+ncumplimiento al C=F3digo de =C9tica y Conducta de YPF, pol=EDticas corpora=
+tivas asociadas y/o la ley se encuentra disponible la L=EDnea =C9tica Telef=
+=F3nica: 0800 =96 444 =96 7722 y la L=EDnea =C9tica WEB www.lineadedenuncia=
+s.com.ar en www.ypf.com .
+
+--_000_69cd042fe6eb4b86b213f1d9c61194beCPUP152MB6542LAMP152PRO_
+Content-Type: text/html; charset="Windows-1252"
+Content-ID: <12B498C57F782F4BBD988E73FCE2FE3A@LAMP215.PROD.OUTLOOK.COM>
+Content-Transfer-Encoding: quoted-printable
+
+<html><head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DWindows-1=
+252">
+<meta name=3D"Generator" content=3D"Microsoft Word 15 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0cm;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-fareast-language:EN-US;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:#0563C1;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:#954F72;
+	text-decoration:underline;}
+span.EstiloCorreo17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri",sans-serif;
+	color:windowtext;}
+span.markk2398hqa8
+	{mso-style-name:markk2398hqa8;}
+span.mark9048hlnhs
+	{mso-style-name:mark9048hlnhs;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-family:"Calibri",sans-serif;
+	mso-fareast-language:EN-US;}
+@page WordSection1
+	{size:612.0pt 792.0pt;
+	margin:70.85pt 3.0cm 70.85pt 3.0cm;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"ES-AR" link=3D"#0563C1" vlink=3D"#954F72">
+<div style=3D"background-color:gray;"><font color=3D"yellow">***Este mensaj=
+e es de una fuente externa a la empresa. Por favor tenga cuidado abriendo a=
+rchivos adjuntos, haciendo click en los enlaces o respondiendolo.***</font>=
+</div>
+<br>
+<br>
+<div>
+<div class=3D"WordSection1">
+<p style=3D"margin:0cm;margin-bottom:.0001pt"><span style=3D"color:black">S=
+u mail ha sido recibido, por favor tener en cuenta que el mismo no implica =
+conformidad de los documentos all=ED incluidos. Ante cualquier consulta com=
+unicarse al Call Center de Atenci=F3n a
+ Proveedores 0810-122-9681 y/o a trav=E9s de nuestra p=E1gina&nbsp;</span><=
+span style=3D"color:red"><a href=3D"https://outlook.office365.com/mail/rece=
+pciondefacturas@ypf.com/options/mail/www.ypf.com" target=3D"_blank"><span s=
+tyle=3D"color:black">www.ypf.com</span></a></span><span style=3D"color:blac=
+k">
+ apartado de preguntas frecuentes&nbsp;</span><span style=3D"color:#201F1E"=
+><o:p></o:p></span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt;-ms-text-autospace:"><span sty=
+le=3D"color:black">&nbsp;&nbsp;</span><span style=3D"color:#201F1E"><o:p></=
+o:p></span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt;-ms-text-autospace:"><span sty=
+le=3D"color:black">Le comunicamos que a partir del 01/07/21 el =FAnico buz=
+=F3n habilitado para la recepci=F3n de facturas/notas de d=E9bito para toda=
+s las sociedades ser=E1 el siguiente: &nbsp;</span><span style=3D"color:red=
+"><a href=3D"mailto:recepciondefacturas@ypf.com" target=3D"_blank"><span st=
+yle=3D"color:black">recepciondefacturas@ypf.com</span></a></span><span styl=
+e=3D"color:black">
+ &nbsp;</span><span style=3D"color:#201F1E"><o:p></o:p></span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt;-ms-text-autospace:"><span sty=
+le=3D"color:black">&nbsp;</span><span style=3D"color:#201F1E"><o:p></o:p></=
+span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt;-ms-text-autospace:"><span sty=
+le=3D"color:black">Recuerde enviar las facturas en formato legible y con la=
+s caracter=EDsticas definidas en la web de proveedores&nbsp;</span><span st=
+yle=3D"color:#201F1E"><a href=3D"https://www.ypf.com/Proveedores/Paginas/Pa=
+go-a-proveedores-preguntas-frecuentes.aspx" target=3D"_blank"><span style=
+=3D"color:windowtext;text-decoration:none">https://www.ypf.com/Proveedores/=
+Paginas/Pago-a-proveedores-preguntas-frecuentes.aspx</span></a></span><span=
+ style=3D"color:black">.
+ Verifique los certificados e informaci=F3n impositiva antes de facturar en=
+ </span>
+<span style=3D"color:#201F1E"><a href=3D"https://www.ypf.com/Proveedores/Pa=
+ginas/Certificados-e-informacion-impositiva.aspx" target=3D"_blank"><span s=
+tyle=3D"color:windowtext;text-decoration:none">https://www.ypf.com/Proveedo=
+res/Paginas/Certificados-e-informacion-impositiva.aspx</span></a></span><sp=
+an style=3D"color:black">.
+<b>Evite rechazos.</b>&nbsp;</span><span style=3D"color:#201F1E"><o:p></o:p=
+></span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt;-ms-text-autospace:"><span sty=
+le=3D"color:black">&nbsp;</span><span style=3D"color:#201F1E"><o:p></o:p></=
+span></p>
+<p style=3D"margin:0cm;margin-bottom:.0001pt"><span class=3D"markk2398hqa8"=
+><span style=3D"color:black">Respuesta</span></span><span style=3D"color:bl=
+ack">
+<span class=3D"mark9048hlnhs">Autom=E1tica</span>, este buz=F3n no responde=
+ mensajes enviados</span><span style=3D"color:#201F1E"><o:p></o:p></span></=
+p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+AVISO LEGAL: Esta informaci=F3n es privada y confidencial y est=E1 dirigida=
+ =FAnicamente a su destinatario. Si usted no es el destinatario original de=
+ este mensaje y por este medio pudo acceder a dicha informaci=F3n se le pid=
+e gentilmente que elimine el presente mensaje.
+ La distribuci=F3n o copia de este mensaje est=E1 estrictamente prohibida. =
+Esta comunicaci=F3n es s=F3lo para prop=F3sitos de informaci=F3n y no debe =
+ser considerada como una propuesta, aceptaci=F3n ni como una declaraci=F3n =
+de voluntad de parte del personal de YPF S.A. La
+ transmisi=F3n de mensajes por medio del servicio de mensajer=EDa electr=F3=
+nica corporativa no est=E1 exenta de errores. Por consiguiente, no manifest=
+amos que esta informaci=F3n sea completa o precisa. Toda informaci=F3n est=
+=E1 sujeta a alterarse sin previo aviso. Ante cualquier
+ incumplimiento al C=F3digo de =C9tica y Conducta de YPF, pol=EDticas corpo=
+rativas asociadas y/o la ley se encuentra disponible la L=EDnea =C9tica Tel=
+ef=F3nica: 0800 =96 444 =96 7722 y la L=EDnea =C9tica WEB www.lineadedenunc=
+ias.com.ar en www.ypf.com .
+</div>
+</body>
+</html>
+
+--_000_69cd042fe6eb4b86b213f1d9c61194beCPUP152MB6542LAMP152PRO_--
+,
+"$content-type":"message/rfc822"
+}

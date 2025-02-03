@@ -204,111 +204,87 @@ class ImageFieldExtractor:
 
     def extract_fields(self, base64_images: list, fields_to_extract: List[str]):
         """
-        Extrae datos específicos de una lista de imágenes en base64 y organiza los resultados.
+        Extrae datos específicos de una lista de imágenes en base64 y organiza los resultados en un diccionario.
 
         :param base64_images: Lista de diccionarios con datos de las imágenes (file_name y base64_content).
         :param fields_to_extract: Lista de campos a extraer.
         :return: Diccionario con los resultados extraídos o información de error.
         """
         try:
-            # Validar entradas
             if not base64_images or not isinstance(base64_images, list):
                 raise ValueError("La lista de imágenes base64 no es válida.")
             if not fields_to_extract or not isinstance(fields_to_extract, list):
                 raise ValueError("La lista de campos a extraer no es válida.")
 
-            # Lista para acumular resultados
-            all_results = []
+            all_results = {}
 
             for index, image_data in enumerate(base64_images):
                 file_name = image_data.get("file_name", f"unknown_{index + 1}")
                 base64_content = image_data.get("base64_content", "")
 
-                # Validar contenido base64 de la imagen
                 if not base64_content:
                     print(f"El archivo {file_name} no contiene datos base64.")
-                    all_results.append({
-                        "file_name": file_name,
-                        "fields": [],
-                        "missing_fields": [],  # Si no hay datos, no hay campos que analizar
-                        "error": "El contenido base64 está vacío."
-                    })
+                    all_results[file_name] = {
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": "El contenido base64 está vacío.",
+                        "source": "image"
+                    }
                     continue
 
-                # Crear contenido del usuario para enviar al modelo
                 user_content = self.create_user_content(base64_content, fields_to_extract)
 
-                # Configurar mensajes para el modelo
                 messages = [
                     {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
                     {"role": "user", "content": user_content}
                 ]
 
                 try:
-                    # Llamar al modelo OpenAI en Azure
                     completion = self.openai_client.beta.chat.completions.parse(
                         model=self.gpt_model_name,
                         messages=messages,
-                        max_tokens=3000,
+                        max_tokens=5000,
                         temperature=0.1,
                         top_p=0.1,
                         logprobs=True,
                     )
 
-                    # Extraer tokens usados
                     prompt_tokens = completion.usage.prompt_tokens
                     completion_tokens = completion.usage.completion_tokens
                     total_tokens = prompt_tokens + completion_tokens
                     print(f"Tokens usados para {file_name}: {total_tokens} (Prompt: {prompt_tokens}, Completion: {completion_tokens})")
 
-                    # Procesar respuesta del modelo
                     data = self.parse_completion_response(completion)
 
-                    # Crear los campos en el formato esperado
-                    fields = [
-                        {
-                            "field": field_name,
-                            "value": data.get(field_name, None),
-                            "confidence": None  # Ajustar si se incluye la confianza en el futuro
-                        }
-                        for field_name in fields_to_extract
-                    ]
+                    # Crear el diccionario de campos extraídos
+                    extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
 
                     # Identificar campos faltantes
-                    missing_fields = [field for field in fields_to_extract if data.get(field) is None]
+                    missing_fields = [field for field, value in extracted_fields.items() if value is None]
 
-                    # Agregar resultados de esta imagen
-                    all_results.append({
-                        "file_name": file_name,
-                        "fields": [
-                            {
-                                "invoice_number": index + 1,
-                                "fields": fields
-                            }
-                        ],
-                        "missing_fields": missing_fields,  # Ahora cada archivo tiene su propia lista de faltantes
-                        "error": ""
-                    })
+                    # Guardar resultados en un diccionario
+                    all_results[file_name] = {
+                        "invoice_number": index + 1,
+                        "fields": extracted_fields,
+                        "missing_fields": missing_fields,
+                        "error": "",
+                        "source": "image"
+                    }
 
                 except Exception as model_error:
-                    # Manejo de errores al llamar al modelo o procesar su respuesta
                     print(f"Error procesando la imagen {file_name}: {model_error}")
-                    all_results.append({
-                        "file_name": file_name,
-                        "fields": [],
-                        "missing_fields": [],  # Si hay error, no hay campos analizados
-                        "error": str(model_error)
-                    })
+                    all_results[file_name] = {
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": str(model_error),
+                        "source": "image"
+                    }
 
             return all_results
         except Exception as e:
-            # Manejo de errores general
             print(f"Error general al extraer campos: {e}")
-            return {
-                "fields": [],
-                "missing_fields": [],
-                "error": str(e)
-            }
+            return {"error": str(e)}
+
 
 
 

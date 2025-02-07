@@ -1,31 +1,23 @@
-from typing import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 class Mail(TypedDict):
-    asunto:str
-    cuerpo:str
-    adjuntos:str
-    categoria:str
+    asunto:Annotated[str, ...]
+    cuerpo:Annotated[str, ...]
+    adjuntos:Annotated[list, ...]
+    categoria:Annotated[str, ...]
+    extracciones:Annotated[list, ...]
+    tokens:Annotated[int, ...]
     
-    # Getters
-    def get_asunto(self) -> str:
-        return self.asunto
-
-    def get_cuerpo(self) -> str:
-        return self.cuerpo
-
-    def get_adjuntos(self) -> str:
-        return self.adjuntos
-
-    # Función para vaciar los adjuntos
-    def rechazar_adjuntos(self):
-        self.adjuntos = ""
+class Result(TypedDict):
+    category:Annotated[str, ...]
+    extractions:Annotated[list, ...]
+    tokens:Annotated[int, ...]
 
 # Schemas de entrada y salida
 class Input(TypedDict):
-    asunto:str
-    cuerpo:str
-    adjuntos:list
+    asunto:Annotated[str, ...]
+    cuerpo:Annotated[str, ...]
+    adjuntos:Annotated[list, ...]
 
 class Output(TypedDict):
-    categoria:str
-    data:dict
+    result: Annotated[dict, ...]

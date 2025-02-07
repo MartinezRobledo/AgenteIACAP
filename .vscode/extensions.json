@@ -1,5 +1,7 @@
 {
-    "recommendations": [
-        "visualstudioexptteam.vscodeintellicode"
-    ]
+  "recommendations": [
+    "ms-azuretools.vscode-azurefunctions",
+    "ms-python.python",
+    "visualstudioexptteam.vscodeintellicode"
+  ]
 }

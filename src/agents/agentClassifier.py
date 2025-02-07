@@ -1,9 +1,10 @@
 import re
+from typing import Annotated, TypedDict
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
 from src.configs.llms import llm4o
-from src.configs.classes import Input, Output
+from src.configs.classes import Input
 from src.configs.Prompt_Template import categories, reflection_definition, classifier_definition
 from src.services.tools.evaluar_contexto import evaluar_contexto
 
@@ -11,6 +12,9 @@ categories = "\n".join(categories)
 
 classification = classifier_definition | llm4o
 llm_with_tools = reflection_definition | llm4o.bind_tools([evaluar_contexto])
+
+class OutputState(TypedDict):
+    category:Annotated[str, ...]
 
 def input_node(state:Input) -> MessagesState:
     return {
@@ -37,12 +41,12 @@ async def reflection_node(state: MessagesState) -> MessagesState:
     response = llm_with_tools.invoke(state["messages"]+[prompt])
     return {"messages": state["messages"]+[response]}
 
-def output_node(state: MessagesState) -> Output:
+def output_node(state: MessagesState) -> OutputState:
     match = re.search(r"APROBADA:\s*\"([^\"]+)\"", state["messages"][-1].content)
     if match:
         categoria = match.group(1)  # Extraer el valor después de "APROBADA:"
-        return Output(categoria=categoria, data={})
-    return Output(categoria="Otras consultas", data={})  # Valor por defecto si no se logró aprobar la categoría.
+        return {"category":categoria}
+    return{"category":"Otras consultas"}  # Valor por defecto si no se logró aprobar la categoría.
 
 # Defino edges
 def should_continue(state: MessagesState) -> str:
@@ -52,7 +56,7 @@ def should_continue(state: MessagesState) -> str:
         return "classifier"  # Si está rechazada, regresa al clasificador
 
 # Defino grafo
-builder = StateGraph(MessagesState, input=Input, output=Output)
+builder = StateGraph(MessagesState, input=Input, output=OutputState)
 
 builder.add_node("input", input_node)
 builder.add_node("classifier", classifier_node)

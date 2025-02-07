@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-        "cap_agent": "./src/agents/agentExtractor.py:extractor"
+        "cap_agent": "./src/workflows/main.py:graph"
     }
 }

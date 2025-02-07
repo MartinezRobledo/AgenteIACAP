@@ -1,0 +1,22 @@
+# DO NOT include azure-functions-worker in this file
+# The Python Worker is managed by Azure Functions platform
+# Manually managing azure-functions-worker may cause unexpected issues
+
+azure-functions
+# langgraph
+# langchain-openai
+# langgraph-cli[inmen]
+# langgraph-api
+# fastapi[standard]
+# openpyxl
+# transformers[torch]
+# sentence-transformers
+# nltk
+# datasets
+# tabulate
+# azure-ai-documentintelligence
+# tenacity
+# pdf2image
+# azure-identity
+# fitz
+# pymupdf

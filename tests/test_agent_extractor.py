@@ -3,18 +3,24 @@ import base64
 import json
 import os
 import glob
+import re
+import time
 import pandas as pd
 from tabulate import tabulate
 from src.configs.classes import Input
 from src.agents.agentExtractor import extractor
 from src.services.tools.convert_pdf import pdf_page_to_base64
 
-INPUT_FILE = "D:\\Python\\agents\\tests\\Casos.xlsx"
-OUTPUT_FILE = "D:\\Python\\agents\\tests\\Casos - Extracción_resultados_03022025.xlsx"
+# INPUT_FILE = "D:\\Python\\agents\\tests\\Casos.xlsx"
+INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Pruebas - 02-05.xlsx"
+OUTPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Casos - Extracción - Resultados.xlsx"
+
+import json
+import re
 
 async def process_excel():
     # Cargar el archivo Excel
-    df = pd.read_excel(INPUT_FILE)
+    df = pd.read_excel(INPUT_FILE, nrows=10)
     
     # Verificar que tenga las columnas necesarias
     if not {'Asunto', 'Cuerpo', 'IDCaso'}.issubset(df.columns):
@@ -22,43 +28,86 @@ async def process_excel():
     
     # Crear listas separadas para cada campo
     results = []
+    consumos = []
+    times = []
 
     for index, row in df.iterrows():
-        case_id = row['IDCaso']
-        adjuntos_path = f"D:\\Python\\agents\\tests\\Casos_de_adjuntos\\{case_id}"
+        try:
+            start_time = time.perf_counter()
+            case_id = row['IDCaso']
+            adjuntos_path = f"C:\\Users\Adrián\\Enta Consulting\\Optimización del CAP - General\\Adjuntos\\{case_id}"
 
-        
-        adjuntos_list = []
-        if os.path.exists(adjuntos_path):
-            print("DEBUG - path exists")
-            for file_path in glob.glob(os.path.join(adjuntos_path, '*')):
-                if file_path.lower().endswith('.pdf'):
-                    print("DEBUG - file path: ", file_path)
-                    for page_number in range(1, 2):
-                        base64_image = pdf_page_to_base64(file_path, page_number)
-                        if base64_image:
-                            adjuntos_list.append({"file_name": f"{os.path.basename(file_path)}_page_{page_number}.png", "base64_content": base64_image})
-                elif file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    with open(file_path, "rb") as image_file:
-                        encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-                        adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
-        
-        input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
+            adjuntos_list = []
+            if os.path.exists(adjuntos_path):
+                for file_path in glob.glob(os.path.join(adjuntos_path, '*')):
+                    file_extension = os.path.splitext(file_path)[1].lower()
+
+                    if file_extension in ['.png', '.jpg', '.jpeg']:
+                        with open(file_path, "rb") as image_file:
+                            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                            adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
+                    else:
+                        with open(file_path, "rb") as doc_file:
+                            encoded_string = base64.b64encode(doc_file.read()).decode("utf-8")
+                            adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
+
+            input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
+
+            # Invocar el extractor
+            result = await extractor.ainvoke(input_data)
+            result = result.get("extractions", {})
+            extractions = result[-1].get("data", {})
+            consumo = result[-1].get("meta_data", {})
+            consumo = consumo.get("total_tokens", {})
+            consumos.append(consumo)
+            # Asegurarse de que content esté presente
+            content = extractions[-1]
+            if content:
+                # Verificar si se encuentra el bloque JSON en el contenido
+                match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
+                if match:
+                    json_string = match.group(1)
+                    try:
+                        extractions_json = json.loads(json_string)
+                        results.append(extractions_json)
+                        print(f"Fila {index} procesada correctamente.")
+                    except json.JSONDecodeError as e:
+                        print(f"Error al decodificar JSON en la fila {index}: {e}")
+                        results.append(None)
+                else:
+                    print(f"No se encontró JSON en el contenido de la fila {index}")
+                    print(f"Contenido encontrado en su lugar: ", content)
+                    results.append(None)
+            else:
+                print(f"No se encontró 'content' en el resultado de la fila {index}")
+                results.append(None)
+            elapsed_time = time.perf_counter() - start_time
+            times.append(elapsed_time)
+            time.sleep(1)
+        except:
+            time.sleep(5)
+            continue
     
-        # Invocar el extractor
-        result = await extractor.ainvoke(input_data)
-        extractions = result.get("extractions", {})
-        results.append(extractions)
-        print(f"Fila {index} procesada correctamente.")
 
     # Agregar la columna "Extracción" en la primera columna disponible
     if "Extracción" not in df.columns:
         df.insert(len(df.columns), "Extracción", None)
+
+    # Agregar la columna "Tokens" en la primera columna disponible
+    if "Tokens" not in df.columns:
+        df.insert(len(df.columns), "Tokens", None)
     
+    # Agregar la columna "Time" en la primera columna disponible
+    if "Time" not in df.columns:
+        df.insert(len(df.columns), "Time", None)
+
     # Agregar las columna al DataFrame
     df["Extracción"] = results
+    df["Tokens"] = consumos
+    df["Time"] = times
     df.to_excel(OUTPUT_FILE, index=False)
     print(f"Resultados guardados en {OUTPUT_FILE}")
+
 
 async def process_case():
     

@@ -11,8 +11,6 @@ logging.basicConfig(level=logging.ERROR)  # Puedes usar INFO, WARNING, etc.
 logger = logging.getLogger("langchain")
 logger.setLevel(logging.ERROR)
 
-
-
 relevant_categories = ["Estado de facturas", "Pedido devolución retenciones", "Impresión de OP y/o Retenciones"]
 
 async def call_cleaner(state: Input) -> Mail:

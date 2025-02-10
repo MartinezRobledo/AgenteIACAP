@@ -48,7 +48,7 @@ async def process_excel():
                             adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
             
             input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
-            response = await graph.ainvoke(input_data)
+            response = await graph.ainvoke(input=input_data)
             result = response.get("result", {})
             category = result.get("category", {})
             print(f"DEBUG - Categoria obtenida: {category}")

@@ -1,10 +1,10 @@
 from typing import Literal
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START, END
-from src.agents.agentCleaner import cleaner
-from src.agents.agentClassifier import classifier
-from src.agents.agentExtractor import extractor
-from src.configs.classes import Input, Output, Mail
+from agentiacap.agents.agentCleaner import cleaner
+from agentiacap.agents.agentClassifier import classifier
+from agentiacap.agents.agentExtractor import extractor
+from agentiacap.configs.classes import Input, Output, Mail
 import logging
 
 logging.basicConfig(level=logging.ERROR)  # Puedes usar INFO, WARNING, etc.

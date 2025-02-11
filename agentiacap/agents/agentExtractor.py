@@ -1,16 +1,16 @@
-from collections import defaultdict
+import textwrap
 import operator
 import json
+from collections import defaultdict
 from typing_extensions import TypedDict
 from langchain_core.messages import HumanMessage, SystemMessage
-from src.services.tools.document_intelligence import process_base64_files, ImageFieldExtractor
 from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
-from src.configs.classes import Input
-from src.configs.llms import llm4o
-from src.configs.Prompt_Template import TextExtractorPrompt, fields_to_extract, merger_definition
-from src.services.tools.convert_pdf import pdf_base64_to_image_base64
-import textwrap
+from agentiacap.tools.document_intelligence import process_base64_files, ImageFieldExtractor
+from agentiacap.configs.classes import Input
+from agentiacap.configs.llms import llm4o
+from agentiacap.configs.Prompt_Template import TextExtractorPrompt, fields_to_extract, merger_definition
+from agentiacap.tools.convert_pdf import pdf_base64_to_image_base64
 
 def print_truncated(data, max_length=50, indent=0):
     """Imprime un diccionario truncando los strings largos sin modificar los datos originales."""

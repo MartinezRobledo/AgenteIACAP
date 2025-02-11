@@ -1,10 +1,13 @@
 import random
 import json
+from pathlib import Path
 from langchain_core.messages import HumanMessage
 from langgraph.graph import MessagesState
-from src.configs.llms import llm4o
+from agentiacap.configs.llms import llm4o
 
-json_file = "D:\\Python\\agents\\tests\\Ejemplos.json"
+# json_file = "D:\\Python\\AIAgentCAP\\aiagentcap\\Ejemplos.json"
+BASE_DIR = Path(__file__).resolve().parent  # Directorio del script actual
+json_file = BASE_DIR / "Ejemplos.json"
 
 # Tools
 def evaluar_contexto(categoria: str, email_entrada: str) -> MessagesState:

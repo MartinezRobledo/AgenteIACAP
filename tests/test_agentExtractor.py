@@ -6,10 +6,9 @@ import glob
 import re
 import time
 import pandas as pd
-from tabulate import tabulate
-from src.configs.classes import Input
-from src.agents.agentExtractor import extractor
-from src.services.tools.convert_pdf import pdf_page_to_base64
+from agentiacap.configs.classes import Input
+from agentiacap.agents.agentExtractor import extractor
+from agentiacap.tools.convert_pdf import pdf_page_to_base64
 
 # INPUT_FILE = "D:\\Python\\agents\\tests\\Casos.xlsx"
 INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Pruebas - 02-05.xlsx"
@@ -242,7 +241,6 @@ Saludos.
         headers = ["File Name", "Customer Name", "Customer Tax ID", "Invoice ID", "Vendor Tax ID", "CAPCase"]
 
         # Imprimir en formato tabla
-        print(tabulate(table_data, headers=headers, tablefmt="grid"))
         print("Salida procesada correctamente.")
 
 if __name__ == "__main__":

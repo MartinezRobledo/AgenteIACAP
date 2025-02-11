@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from langchain_core.messages import HumanMessage
-from src.configs.classes import Input
+from agentiacap.configs.classes import Input
 
 # Nodo que limpia el cuerpo
 def clean_body(state: Input, clean) -> Input:

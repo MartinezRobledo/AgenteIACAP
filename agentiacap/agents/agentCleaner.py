@@ -1,9 +1,9 @@
 from typing import Annotated, TypedDict
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
-from src.configs.Prompt_Template import cleaner_definition
-from src.configs.llms import llm4o
-from src.configs.classes import Input
+from agentiacap.configs.Prompt_Template import cleaner_definition
+from agentiacap.configs.llms import llm4o
+from agentiacap.configs.classes import Input
 
 class Cuerpo(TypedDict):
     cuerpo:Annotated[str, ...]

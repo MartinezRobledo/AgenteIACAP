@@ -1,6 +1,6 @@
 import unittest
 import asyncio
-from src.agents.agentClassifier import classifier, Input  # Ajusta el import según tu estructura de archivos
+from agentiacap.agents.agentClassifier import classifier, Input  # Ajusta el import según tu estructura de archivos
 
 class TestClassifier(unittest.TestCase):
     def setUp(self):

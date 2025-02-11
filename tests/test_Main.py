@@ -5,8 +5,8 @@ import os
 import glob
 import time
 import pandas as pd
-from src.configs.classes import Input
-from src.workflows.main import graph
+from agentiacap.configs.classes import Input
+from agentiacap.workflows.main import graph
 
 INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Pruebas - 02-06.xlsx"
 OUTPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Casos - Extracción - Resultados.xlsx"

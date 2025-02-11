@@ -1,4 +1,9 @@
+import os
+from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
+
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
 
 llm4o_mini = AzureChatOpenAI(
     azure_deployment="gpt-4o-mini",  

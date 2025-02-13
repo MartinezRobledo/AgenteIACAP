@@ -6,7 +6,7 @@ import glob
 import re
 import time
 import pandas as pd
-from agentiacap.configs.classes import Input
+from agentiacap.utils.globals import InputSchema
 from agentiacap.agents.agentExtractor import extractor
 from agentiacap.tools.convert_pdf import pdf_page_to_base64
 
@@ -50,7 +50,7 @@ async def process_excel():
                             encoded_string = base64.b64encode(doc_file.read()).decode("utf-8")
                             adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
 
-            input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
+            input_data = InputSchema(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
 
             # Invocar el extractor
             result = await extractor.ainvoke(input_data)
@@ -110,7 +110,7 @@ async def process_excel():
 
 async def process_case():
     
-        input_data = Input(asunto="""
+        input_data = InputSchema(asunto="""
         RE: Pedido de Dev. Retenciones - 30592665472  TECPETROL S.A. - CAP-515904-G8R7G1 YPF-CAP:0541003983
         """, cuerpo="""
         "Adjunto lo solicitado.

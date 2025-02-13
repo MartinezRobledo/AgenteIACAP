@@ -68,7 +68,6 @@ def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
 
         try:
             file_bytes = base64.b64decode(base64_content)
-            print("DEBUG - Analizando PDF - ", file_name)
             # Intentar con text-based primero
             text_result = analyze_document_prebuilt_invoice(client, file_bytes, fields_to_extract)
 
@@ -189,13 +188,28 @@ class ImageFieldExtractor:
                 base64_content = image_data.get("base64_content", "")
 
                 if not base64_content:
-                    print(f"El archivo {file_name} no contiene datos base64.")
                     all_results[file_name] = {
                         "fields": {},
                         "missing_fields": [],
                         "error": "El contenido base64 está vacío.",
+                        "source": "Vision"
                     }
                     continue
+                # Intentar decodificar para validar contenido base64
+                print("DEBUG - Iniciando procesamiento de file ", file_name)
+                try:
+                    base64.b64decode(base64_content, validate=True)
+                except (base64.binascii.Error, ValueError) as error:
+                    error_message = f"El contenido del archivo en base64 no es válido. Error: {error}"
+                    print(f"Archivo {file_name}. {error_message}")
+                    all_results[file_name] = {
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": error_message,
+                        "source": "Vision"
+                    }
+                    continue
+                print("DEBUG - Continuando procesamiento de file ", file_name)
 
                 user_content = self.create_user_content(base64_content, fields_to_extract)
 
@@ -214,10 +228,10 @@ class ImageFieldExtractor:
                         logprobs=True,
                     )
 
-                    prompt_tokens = completion.usage.prompt_tokens
-                    completion_tokens = completion.usage.completion_tokens
+                    # Asegurar que total_tokens siempre esté definido
+                    prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
+                    completion_tokens = getattr(completion.usage, "completion_tokens", 0)
                     total_tokens = prompt_tokens + completion_tokens
-                    print(f"Tokens usados para {file_name}: {total_tokens} (Prompt: {prompt_tokens}, Completion: {completion_tokens})")
 
                     data = self.parse_completion_response(completion)
 
@@ -238,7 +252,6 @@ class ImageFieldExtractor:
                     }
 
                 except Exception as model_error:
-                    print(f"Error procesando la imagen {file_name}: {model_error}")
                     all_results[file_name] = {
                         "fields": {},
                         "missing_fields": [],
@@ -249,7 +262,6 @@ class ImageFieldExtractor:
 
             return all_results
         except Exception as e:
-            print(f"Error general al extraer campos: {e}")
             return {"error": str(e)}
 
 

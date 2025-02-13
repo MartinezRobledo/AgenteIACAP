@@ -1,20 +1,20 @@
 [project]
 name = "agentiacap"
-version = "0.1.2"
+version = "0.1.4"
 description = ""
 authors = [
     {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},
     {name = "Eugenio Punti",email = "epunti@entaconsulting.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11.5,<4.0"
 dependencies = [
     "langgraph (>=0.2.63,<0.3.0)",
     "langchain-openai (>=0.3.0,<0.4.0)",
     "langgraph-cli[inmen] (>=0.1.67,<0.2.0)",
     "langchain-core (>=0.3.34,<0.4.0)",
     "pandas (>=2.2.3,<3.0.0)",
-    "numpy (>=2.2.2,<3.0.0)",
+    "numpy (>=1.26.4,<2.0.0)",
     "openpyxl (>=3.1.5,<4.0.0)",
     "pdf2image (>=1.17.0,<2.0.0)",
     "pymupdf (>=1.25.2,<2.0.0)",
@@ -24,6 +24,7 @@ dependencies = [
     "python-dotenv (>=1.0.1,<2.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
     "langgraph-api (>=0.0.22,<0.0.23)",
+    "langchain (>=0.3.18,<0.4.0)",
 ]
 
 

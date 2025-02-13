@@ -3,9 +3,8 @@ import json
 from pathlib import Path
 from langchain_core.messages import HumanMessage
 from langgraph.graph import MessagesState
-from agentiacap.configs.llms import llm4o
+from agentiacap.llms.llms import llm4o
 
-# json_file = "D:\\Python\\AIAgentCAP\\aiagentcap\\Ejemplos.json"
 BASE_DIR = Path(__file__).resolve().parent  # Directorio del script actual
 json_file = BASE_DIR / "Ejemplos.json"
 

@@ -5,7 +5,7 @@ import os
 import glob
 import time
 import pandas as pd
-from agentiacap.configs.classes import Input
+from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
 
 INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Pruebas - 02-06.xlsx"
@@ -47,7 +47,7 @@ async def process_excel():
                             encoded_string = base64.b64encode(file.read()).decode("utf-8")
                             adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
             
-            input_data = Input(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
+            input_data = InputSchema(asunto=row['Asunto'], cuerpo=row['Cuerpo'], adjuntos=adjuntos_list)
             response = await graph.ainvoke(input=input_data)
             result = response.get("result", {})
             category = result.get("category", {})
@@ -98,6 +98,67 @@ async def process_excel():
             df.at[index, "Time"] = 0
             df.to_excel(OUTPUT_FILE, index=False)
             time.sleep(2)
-    
+
+
+import os
+async def process_json():
+
+    # Obtiene la ruta absoluta del archivo 'caso.json' en relación con el script actual
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Directorio del script
+    file_path = os.path.join(script_dir, 'caso.json')
+
+    with open(file_path, 'r') as file:
+        content = json.load(file)
+
+    asunto = content.get('asunto')
+    cuerpo = content.get('cuerpo')
+    adjuntos_list = content.get('adjuntos')
+    try:
+        start_time = time.perf_counter()
+        
+        input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos_list)
+        response = await graph.ainvoke(input=input_data)
+        result = response.get("result", {})
+        category = result.get("category", {})
+        print(f"DEBUG - Categoria obtenida: {category}")
+        extractions = result.get("extractions", {})
+        tokens = result.get("tokens", {})
+        print(f"DEBUG - Total de tokens: {tokens}")
+
+        if isinstance(extractions, list):
+            extractions = json.dumps(extractions)
+        data = json.loads(extractions)
+        # Diccionario para almacenar datos agrupados por "Fuente"
+        fuentes = {"Mail": [], "Document Intelligence": [], "Vision": []}
+        # Procesar los datos y agrupar por fuente
+        for item in data:
+            fuente = item["fuente"]
+            if fuente in fuentes:
+                fuentes[fuente].extend(item["valores"])
+
+        # Variables separadas por fuente
+        fuente_Mail = fuentes["Mail"]
+        fuente_Document_Intelligence = fuentes["Document Intelligence"]
+        fuente_Vision = fuentes["Vision"]
+
+                
+        
+        # Imprimir los resultados de las fuentes
+        print(f"DEBUG - Fuente 'Mail': {fuente_Mail}")
+        print(f"DEBUG - Fuente 'Document Intelligence': {fuente_Document_Intelligence}")
+        print(f"DEBUG - Fuente 'Vision': {fuente_Vision}")
+        
+        elapsed_time = time.perf_counter() - start_time
+        print(f"Tiempo total de procesamiento: {elapsed_time:.4f} segundos")
+        print(f"Caso procesado.")
+        
+        print(f"Caso procesado.")
+        time.sleep(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        time.sleep(2)
+
+
 if __name__ == "__main__":
-    asyncio.run(process_excel())
+    # asyncio.run(process_excel())
+    asyncio.run(process_json())

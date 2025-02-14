@@ -53,6 +53,7 @@ def output_node(state: MailSchema) -> OutputSchema:
             "extractions": state.get("extracciones", []),  # Valor por defecto: diccionario vacío
             "tokens": state.get("tokens", 0)  # Valor por defecto: 0
         }
+        print("Result: ", result)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error en 'output_node': {str(e)}")

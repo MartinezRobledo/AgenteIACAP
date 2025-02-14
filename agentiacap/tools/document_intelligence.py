@@ -7,6 +7,7 @@ from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from openai import AzureOpenAI
 from typing import List
 from dotenv import load_dotenv
+from fastapi import UploadFile
 
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
@@ -64,12 +65,73 @@ def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
 
     for file_data in base64_files:
         file_name = file_data.get("file_name", "unknown")
-        base64_content = file_data.get("base64_content", "")
+        content = file_data.get("content", "")
 
         try:
-            file_bytes = base64.b64decode(base64_content)
+            file_bytes = base64.b64decode(content)
             # Intentar con text-based primero
             text_result = analyze_document_prebuilt_invoice(client, file_bytes, fields_to_extract)
+
+            final_results.append({
+                "file_name": file_name,
+                "fields": text_result["results"],
+                "missing_fields": text_result["missing_fields"],
+                "error": text_result["error"],
+                "source": "Document Intelligence"
+            })
+
+        except Exception as e:
+            final_results.append({
+                "file_name": file_name,
+                "fields": [],
+                "missing_fields": [],
+                "error": str(e),
+                "source": "Document Intelligence"
+            })
+
+    return final_results
+
+def process_uploaded_files(uploaded_files: List[UploadFile], fields_to_extract: List[str]) -> list:
+    client = initialize_client()
+    final_results = []
+
+    for file in uploaded_files:
+        file_name = file["content"].filename
+        print("FILE: ",file)
+        try:
+            file_bytes = file["content"].read()  # Leer los bytes del archivo
+            text_result = analyze_document_prebuilt_invoice(client, file_bytes, fields_to_extract)
+
+            final_results.append({
+                "file_name": file_name,
+                "fields": text_result["results"],
+                "missing_fields": text_result["missing_fields"],
+                "error": text_result["error"],
+                "source": "Document Intelligence"
+            })
+
+        except Exception as e:
+            final_results.append({
+                "file_name": file_name,
+                "fields": [],
+                "missing_fields": [],
+                "error": str(e),
+                "source": "Document Intelligence"
+            })
+
+    return final_results
+
+def process_binary_files(binary_files: list, fields_to_extract: list) -> list:
+    client = initialize_client()
+    final_results = []
+
+    for file_data in binary_files:
+        file_name = file_data.get("file_name", "unknown")
+        content = file_data.get("content", b"")
+
+        try:
+            # Procesar el archivo binario directamente
+            text_result = analyze_document_prebuilt_invoice(client, content, fields_to_extract)
 
             final_results.append({
                 "file_name": file_name,
@@ -171,7 +233,7 @@ class ImageFieldExtractor:
         """
         Extrae datos específicos de una lista de imágenes en base64 y organiza los resultados en un diccionario.
 
-        :param base64_images: Lista de diccionarios con datos de las imágenes (file_name y base64_content).
+        :param base64_images: Lista de diccionarios con datos de las imágenes (file_name y content).
         :param fields_to_extract: Lista de campos a extraer.
         :return: Diccionario con los resultados extraídos o información de error.
         """
@@ -185,9 +247,9 @@ class ImageFieldExtractor:
 
             for index, image_data in enumerate(base64_images):
                 file_name = image_data.get("file_name", f"unknown_{index + 1}")
-                base64_content = image_data.get("base64_content", "")
+                content = image_data.get("content", "")
 
-                if not base64_content:
+                if not content:
                     all_results[file_name] = {
                         "fields": {},
                         "missing_fields": [],
@@ -198,7 +260,7 @@ class ImageFieldExtractor:
                 # Intentar decodificar para validar contenido base64
                 print("DEBUG - Iniciando procesamiento de file ", file_name)
                 try:
-                    base64.b64decode(base64_content, validate=True)
+                    base64.b64decode(content, validate=True)
                 except (base64.binascii.Error, ValueError) as error:
                     error_message = f"El contenido del archivo en base64 no es válido. Error: {error}"
                     print(f"Archivo {file_name}. {error_message}")
@@ -211,7 +273,7 @@ class ImageFieldExtractor:
                     continue
                 print("DEBUG - Continuando procesamiento de file ", file_name)
 
-                user_content = self.create_user_content(base64_content, fields_to_extract)
+                user_content = self.create_user_content(content, fields_to_extract)
 
                 messages = [
                     {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
@@ -264,6 +326,90 @@ class ImageFieldExtractor:
         except Exception as e:
             return {"error": str(e)}
 
+    def extract_fields_binary(self, binary_images: list, fields_to_extract: List[str]):
+        """
+        Extrae datos específicos de una lista de imágenes en binario y organiza los resultados en un diccionario.
+
+        :param binary_images: Lista de diccionarios con datos de las imágenes (file_name y content en binario).
+        :param fields_to_extract: Lista de campos a extraer.
+        :return: Diccionario con los resultados extraídos o información de error.
+        """
+        try:
+            if not binary_images or not isinstance(binary_images, list):
+                raise ValueError("La lista de imágenes en binario no es válida.")
+            if not fields_to_extract or not isinstance(fields_to_extract, list):
+                raise ValueError("La lista de campos a extraer no es válida.")
+
+            all_results = {}
+
+            for index, image_data in enumerate(binary_images):
+                file_name = image_data.get("file_name", f"unknown_{index + 1}")
+                content = image_data.get("content", b"")  # Ahora es binario
+
+                if not content:
+                    all_results[file_name] = {
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": "El contenido de la imagen está vacío.",
+                        "source": "Vision"
+                    }
+                    continue
+
+                print("DEBUG - Iniciando procesamiento de file ", file_name)
+
+                # Crear input con el contenido binario
+                user_content = self.create_user_content(content, fields_to_extract)
+
+                messages = [
+                    {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
+                    {"role": "user", "content": user_content}
+                ]
+
+                try:
+                    completion = self.openai_client.beta.chat.completions.create(
+                        model=self.gpt_model_name,
+                        messages=messages,
+                        max_tokens=5000,
+                        temperature=0.1,
+                        top_p=0.1,
+                        logprobs=True,
+                    )
+
+                    # Asegurar que total_tokens siempre esté definido
+                    prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
+                    completion_tokens = getattr(completion.usage, "completion_tokens", 0)
+                    total_tokens = prompt_tokens + completion_tokens
+
+                    data = self.parse_completion_response(completion)
+
+                    # Crear el diccionario de campos extraídos
+                    extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
+
+                    # Identificar campos faltantes
+                    missing_fields = [field for field, value in extracted_fields.items() if value is None]
+
+                    # Guardar resultados en un diccionario
+                    all_results[file_name] = {
+                        "invoice_number": index + 1,
+                        "fields": extracted_fields,
+                        "missing_fields": missing_fields,
+                        "error": "",
+                        "source": "Vision",
+                        "tokens": total_tokens
+                    }
+
+                except Exception as model_error:
+                    all_results[file_name] = {
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": str(model_error),
+                        "source": "Vision",
+                        "tokens": total_tokens
+                    }
+
+            return all_results
+        except Exception as e:
+            return {"error": str(e)}
 
 
 
@@ -271,8 +417,8 @@ class ImageFieldExtractor:
 # Ejemplo de uso
 # if __name__ == "__main__":
 #     base64_files = [
-#         {"file_name": "invoice1.pdf", "base64_content": "<base64_string1>"},
-#         {"file_name": "invoice2.pdf", "base64_content": "<base64_string2>"}
+#         {"file_name": "invoice1.pdf", "content": "<base64_string1>"},
+#         {"file_name": "invoice2.pdf", "content": "<base64_string2>"}
 #     ]  # Reemplaza <base64_string1> y <base64_string2> con los datos base64 reales
 #     fields_to_extract = ["InvoiceId", "CustomerName", "TotalAmount"]
 

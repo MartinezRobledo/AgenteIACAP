@@ -6,8 +6,8 @@ def image_to_base64(image_path, output_file):
         with open(image_path, "rb") as image_file:
             base64_data = base64.b64encode(image_file.read()).decode("utf-8")
         
-        with open(output_file, "w") as file:
-            file.write(str(base64_data))
+        with open(output_file, "w", encoding="utf-8") as file:
+            file.write(base64_data)
 
         print(f"Conversión exitosa. Base64 guardado en: {output_file}")
     

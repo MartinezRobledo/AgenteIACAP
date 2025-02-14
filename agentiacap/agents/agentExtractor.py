@@ -6,11 +6,11 @@ from typing_extensions import TypedDict
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
-from agentiacap.tools.document_intelligence import process_base64_files, ImageFieldExtractor
+from agentiacap.tools.document_intelligence import process_base64_files, ImageFieldExtractor, process_binary_files
 from agentiacap.utils.globals import InputSchema
 from agentiacap.llms.llms import llm4o
 from agentiacap.llms.Prompts import TextExtractorPrompt, fields_to_extract, merger_definition
-from agentiacap.tools.convert_pdf import pdf_base64_to_image_base64
+from agentiacap.tools.convert_pdf import pdf_base64_to_image_base64, pdf_binary_to_images
 
 # Configuración del logger
 logging.basicConfig(level=logging.ERROR)
@@ -89,15 +89,15 @@ class VisionNode:
         try:
             images_from_pdfs = []
             for file in state["pdfs"]:
-                pages = pdf_base64_to_image_base64(file["base64_content"], 1)
+                pages = pdf_binary_to_images(file["content"], 1)
                 for page in pages:
                     image = {
                         "file_name": file["file_name"],
-                        "base64_content": page
+                        "content": page
                     }
                     images_from_pdfs.append(image)
             extractor = ImageFieldExtractor()
-            result = extractor.extract_fields(base64_images=state["images"]+images_from_pdfs, fields_to_extract=fields_to_extract)
+            result = extractor.extract_fields_binary(base64_images=state["images"]+images_from_pdfs, fields_to_extract=fields_to_extract)
             print("DEBUG - Resultado de vision: ", result)
             tokens = 0
             for element in result:
@@ -111,7 +111,7 @@ class ImageNode:
     async def __call__(self, state: State) -> State:
         try:
             extractor = ImageFieldExtractor()
-            result = extractor.extract_fields(base64_images=state["images"], fields_to_extract=fields_to_extract)
+            result = extractor.extract_fields_binary(base64_images=state["images"], fields_to_extract=fields_to_extract)
             tokens = 0
             for element in result:
                 tokens += int(result[element]["tokens"])
@@ -124,7 +124,7 @@ class ImageNode:
 class PrebuiltNode():
     async def __call__(self, state: State) -> State:
         try:
-            result = process_base64_files(base64_files=state["pdfs"], fields_to_extract=fields_to_extract)
+            result = process_binary_files(base64_files=state["pdfs"], fields_to_extract=fields_to_extract)
             return {"aggregate": [result]}
         except Exception as e:
             logger.error(f"Error en 'PrebuiltNode': {str(e)}")
@@ -198,19 +198,23 @@ def merge_results(state: State) -> OutputState:
         grouped_data = defaultdict(list)
 
         for item in state["aggregate"]:
-            for key, value in item.items():
-                # Verificar si existe el campo 'source' en el diccionario
-                source = value.get('source') if isinstance(value, dict) else None
-                if source:
-                    value.pop('source')
-                    grouped_data[source].append({key: value})
+            item = item[0]  # Extraer el diccionario dentro de la lista
+            print("DEBUG - Merger Item: ", item)
+            for key, value in item.items():  # Usar .items() para obtener clave y valor correctamente
+                    source = value.get('source') if isinstance(value, dict) else None
+                    if source:
+                        value.pop('source')
+                        grouped_data[source].append({key: value})
 
-        formatted_data = []
-        for source, values in grouped_data.items():
-            formatted_data.append({
-                'fuente': source,
-                'valores': values
-            })
+        formatted_data = [{'fuente': source, 'valores': values} for source, values in grouped_data.items()]
+
+        # formatted_data = []
+        # for source, values in grouped_data.items():
+        #     formatted_data.append({
+        #         'fuente': source,
+        #         'valores': values
+        #     })
+        print("DEBUG - Merger result: ", formatted_data)
         return {"extractions":formatted_data, "tokens":state["tokens"]}
     except Exception as e:
         logger.error(f"Error en 'merge_results': {e}")

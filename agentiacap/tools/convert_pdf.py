@@ -2,7 +2,7 @@ import base64
 import io
 import pymupdf as fitz
 from PIL import Image
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes, convert_from_path
 
 def pdf_page_to_image(pdf_path: str, page_number: int):
     try:
@@ -79,4 +79,30 @@ def pdf_base64_to_image_base64(pdf_base64: str, fin: int):
         except Exception as e:
             print(f"❌ Error al convertir la página {page_number} desde pdf base64 a imagen base64: {e}")
             break
+    return conversiones
+
+
+def pdf_binary_to_images(pdf_binary: bytes, fin: int):
+    """
+    Convierte un PDF en binario en una lista de imágenes en binario (PNG).
+
+    :param pdf_binary: Contenido del PDF en binario.
+    :param fin: Número máximo de páginas a procesar.
+    :return: Lista de imágenes en binario (BytesIO).
+    """
+    conversiones = []
+
+    try:
+        images = convert_from_bytes(pdf_binary, first_page=1, last_page=fin)  # Convertir PDF a imágenes
+
+        for page_number, image in enumerate(images):
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")  # Guardar en formato binario PNG
+            buffer.seek(0)
+            conversiones.append(buffer)
+            print(f"✅ Página {page_number + 1} convertida desde binario a imagen binaria correctamente.")
+
+    except Exception as e:
+        print(f"❌ Error al convertir el PDF a imágenes: {e}")
+
     return conversiones

@@ -39,7 +39,6 @@ async def call_extractor(state: MailSchema) -> MailSchema:
     try:
         input_schema = InputSchema(asunto=state["asunto"], cuerpo=state["cuerpo"], adjuntos=state["adjuntos"])
         extracted_result = await extractor.ainvoke(input_schema)
-        print("DEBUG - extracciones: ", extracted_result)
         return {"extracciones": extracted_result["extractions"], "tokens": extracted_result["tokens"]}
     except Exception as e:
         logger.error(f"Error en 'call_extractor': {str(e)}")
@@ -53,7 +52,6 @@ def output_node(state: MailSchema) -> OutputSchema:
             "extractions": state.get("extracciones", []),  # Valor por defecto: diccionario vacío
             "tokens": state.get("tokens", 0)  # Valor por defecto: 0
         }
-        print("Result: ", result)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error en 'output_node': {str(e)}")

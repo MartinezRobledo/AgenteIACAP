@@ -1,108 +1,79 @@
 import base64
 import io
 import pymupdf as fitz
-from PIL import Image
-from pdf2image import convert_from_bytes, convert_from_path
+from io import BytesIO
 
-def pdf_page_to_image(pdf_path: str, page_number: int):
-    try:
-        images = convert_from_path(pdf_path, first_page=page_number, last_page=page_number)
-        if images:
-            print(f"✅ Página {page_number} convertida a imagen correctamente.")
-            return images[0]  # Retorna la imagen de la página
-        else:
-            print(f"⚠️ No se pudo extraer la imagen de la página {page_number}, intentando renderizar con PyMuPDF.")
-            return render_pdf_page_as_image(pdf_path, page_number)
-    except Exception as e:
-        print(f"❌ Error al convertir la página {page_number} a imagen: {e}")
-        return None
 
 def render_pdf_page_as_image(pdf_path: str, page_number: int):
     try:
         doc = fitz.open(pdf_path)
         page = doc[page_number - 1]  # Índice basado en 1
         pix = page.get_pixmap()
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        
+        img_buffer = io.BytesIO()
+        pix.save(img_buffer, "png")  # Guardar en PNG sin PIL
+        img_buffer.seek(0)
+        
         print(f"✅ Página {page_number} renderizada con PyMuPDF correctamente.")
-        return img
+        return img_buffer
     except Exception as e:
         print(f"❌ Error al renderizar la página {page_number} con PyMuPDF: {e}")
         return None
 
-def pdf_page_to_base64(pdf_path: str, page_number: int):
-    image = pdf_page_to_image(pdf_path, page_number)
-    if image is None:
-        print(f"⚠️ No se pudo convertir la página {page_number} a base64 porque la imagen es inválida.")
-        return None
-    
-    try:
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        base64_string = base64.b64encode(buffer.getvalue()).decode("utf-8")
-        print(f"✅ Página {page_number} convertida a base64 correctamente.")
-        return base64_string
-    except Exception as e:
-        print(f"❌ Error al convertir la página {page_number} a base64: {e}")
-        return None
-
-def pdf_base64_to_image(pdf_base64: str, page_number: int):
-    try:
-        pdf_bytes = base64.b64decode(pdf_base64)
-        pdf_stream = io.BytesIO(pdf_bytes)
-        doc = fitz.open(stream=pdf_stream, filetype="pdf")
-        if page_number <= len(doc):
-            page = doc[page_number - 1]  # Índice basado en 1
-            pix = page.get_pixmap()
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            print(f"✅ Página {page_number} convertida desde base64 a imagen correctamente.")
-            return img
-        else:
-            return None
-    except Exception as e:
-        print(f"❌ Error al convertir la página {page_number} desde base64 a imagen: {e}")
-        return None
-
 def pdf_base64_to_image_base64(pdf_base64: str, fin: int):
     conversiones = []
-    for page_number in range(fin):
-        image = pdf_base64_to_image(pdf_base64, page_number)
-        if image is None:
-            print(f"⚠️ No se pudo convertir la página {page_number} a base64 porque la imagen es inválida o se alcanzo el fin de archivo.")
-            break
+    try:
+        pdf_bytes = base64.b64decode(pdf_base64)
+        pdf_document = fitz.open("pdf", pdf_bytes)  # Cargar PDF desde base64
 
-        try:
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG")
-            base64_string = base64.b64encode(buffer.getvalue()).decode("utf-8")
-            print(f"✅ Página {page_number} convertida desde base64 a base64 correctamente.")
+        for page_number in range(min(fin, len(pdf_document))):
+            page = pdf_document[page_number]
+            pix = page.get_pixmap()
+
+            img_buffer = io.BytesIO()
+            pix.save(img_buffer, "png")  # Guardar imagen en buffer
+            img_buffer.seek(0)
+
+            base64_string = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+            print(f"✅ Página {page_number + 1} convertida a base64 correctamente.")
             conversiones.append(base64_string)
-        except Exception as e:
-            print(f"❌ Error al convertir la página {page_number} desde pdf base64 a imagen base64: {e}")
-            break
+
+    except Exception as e:
+        print(f"❌ Error al convertir PDF a imágenes base64: {e}")
+
     return conversiones
 
 
-def pdf_binary_to_images(pdf_binary: bytes, fin: int):
+def pdf_binary_to_images_base64(pdf_binary: bytes, dpi: int = 300):
     """
-    Convierte un PDF en binario en una lista de imágenes en binario (PNG).
-
-    :param pdf_binary: Contenido del PDF en binario.
-    :param fin: Número máximo de páginas a procesar.
-    :return: Lista de imágenes en binario (BytesIO).
+    Convierte un PDF escaneado en imágenes Base64 con resolución mejorada.
     """
     conversiones = []
-
+    
     try:
-        images = convert_from_bytes(pdf_binary, first_page=1, last_page=fin)  # Convertir PDF a imágenes
+        pdf_document = fitz.open(stream=pdf_binary, filetype="pdf")
 
-        for page_number, image in enumerate(images):
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG")  # Guardar en formato binario PNG
-            buffer.seek(0)
-            conversiones.append(buffer)
-            print(f"✅ Página {page_number + 1} convertida desde binario a imagen binaria correctamente.")
+        for page_number in range(len(pdf_document)):
+            page = pdf_document[page_number]
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))  # Ajuste de resolución
+            
+            # Convertir a bytes JPEG
+            img_bytes = pix.tobytes("jpeg")  
+            base64_image = base64.b64encode(img_bytes).decode("utf-8")
+
+            # Verificación de imagen
+            if not base64_image or len(base64_image) < 50:  # Umbral arbitrario
+                print(f"❌ Error: Imagen Base64 inválida en la página {page_number + 1}")
+                continue
+
+            conversiones.append({
+                "file_name": f"page_{page_number + 1}.jpg",
+                "content": base64_image
+            })
+
+            print(f"✅ Página {page_number + 1} convertida correctamente.")
 
     except Exception as e:
-        print(f"❌ Error al convertir el PDF a imágenes: {e}")
+        print(f"❌ Error al convertir PDF a imágenes: {e}")
 
     return conversiones

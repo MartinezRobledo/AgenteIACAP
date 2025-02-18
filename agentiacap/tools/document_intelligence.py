@@ -21,47 +21,43 @@ def initialize_client():
     return DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
 
 def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extract: list) -> dict:
-    data = {
-        "results": [],
-        "missing_fields": [],
-        "error": ""
-    }
+    data = {}
     try:
         poller = client.begin_analyze_document(
             "prebuilt-invoice", AnalyzeDocumentRequest(bytes_source=file_bytes)
         )
-
         invoices = poller.result()
 
         if invoices.documents:
             for idx, invoice in enumerate(invoices.documents):
-                invoice_data = []
+                fields_data = {}
+                missing_fields = []
+                
                 for field in fields_to_extract:
                     field_data = invoice.fields.get(field)
                     if field_data:
-                        invoice_data.append({
-                            field: field_data.content,
-                        })
+                        fields_data[field] = field_data.content
                     else:
-                        data["missing_fields"].append(field)
-                        invoice_data.append({
-                            field: "none",
-                        })
-
-                data["results"].append({
+                        fields_data[field] = "none"
+                        missing_fields.append(field)
+                
+                data = {
                     "invoice_number": idx + 1,
-                    "fields": invoice_data
-                })
+                    "fields": fields_data,
+                    "missing_fields": missing_fields,
+                    "error": ""
+                }
         else:
-            data["error"] = "No se encontraron documentos en el archivo."
-
+            data = {"error": "No se encontraron documentos en el archivo.", "fields": {}, "missing_fields": []}
+    
     except Exception as e:
-        data["error"] = str(e)
+        data = {"error": str(e), "fields": {}, "missing_fields": []}
+    
     return data
 
 def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
     client = initialize_client()
-    final_results = []
+    final_results = {}
 
     for file_data in base64_files:
         file_name = file_data.get("file_name", "unknown")
@@ -69,88 +65,84 @@ def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
 
         try:
             file_bytes = base64.b64decode(content)
-            # Intentar con text-based primero
             text_result = analyze_document_prebuilt_invoice(client, file_bytes, fields_to_extract)
-
-            final_results.append({
-                "file_name": file_name,
-                "fields": text_result["results"],
+            
+            final_results[file_name] = {
+                "invoice_number": text_result["invoice_number"],
+                "fields": text_result["fields"],
                 "missing_fields": text_result["missing_fields"],
                 "error": text_result["error"],
                 "source": "Document Intelligence"
-            })
+            }
 
         except Exception as e:
-            final_results.append({
-                "file_name": file_name,
-                "fields": [],
+            final_results[file_name] = {
+                "invoice_number": 0,
+                "fields": {},
                 "missing_fields": [],
                 "error": str(e),
                 "source": "Document Intelligence"
-            })
-
-    return final_results
+            }
+    
+    return [final_results]
 
 def process_uploaded_files(uploaded_files: List[UploadFile], fields_to_extract: List[str]) -> list:
     client = initialize_client()
-    final_results = []
+    final_results = {}
 
     for file in uploaded_files:
-        file_name = file["content"].filename
-        print("FILE: ",file)
+        file_name = file.filename
         try:
-            file_bytes = file["content"].read()  # Leer los bytes del archivo
+            file_bytes = file.file.read()
             text_result = analyze_document_prebuilt_invoice(client, file_bytes, fields_to_extract)
-
-            final_results.append({
-                "file_name": file_name,
-                "fields": text_result["results"],
+            
+            final_results[file_name] = {
+                "invoice_number": text_result["invoice_number"],
+                "fields": text_result["fields"],
                 "missing_fields": text_result["missing_fields"],
                 "error": text_result["error"],
                 "source": "Document Intelligence"
-            })
-
+            }
         except Exception as e:
-            final_results.append({
-                "file_name": file_name,
-                "fields": [],
+            final_results[file_name] = {
+                "invoice_number": 0,
+                "fields": {},
                 "missing_fields": [],
                 "error": str(e),
                 "source": "Document Intelligence"
-            })
-
-    return final_results
+            }
+    
+    return [final_results]
 
 def process_binary_files(binary_files: list, fields_to_extract: list) -> list:
     client = initialize_client()
-    final_results = []
+    final_results = {}
 
     for file_data in binary_files:
         file_name = file_data.get("file_name", "unknown")
         content = file_data.get("content", b"")
 
         try:
-            # Procesar el archivo binario directamente
             text_result = analyze_document_prebuilt_invoice(client, content, fields_to_extract)
-
-            final_results.append({
-                "file_name": file_name,
-                "fields": text_result["results"],
+            
+            final_results[file_name] = {
+                "invoice_number": text_result["invoice_number"],
+                "fields": text_result["fields"],
                 "missing_fields": text_result["missing_fields"],
                 "error": text_result["error"],
                 "source": "Document Intelligence"
-            })
-
+            }
         except Exception as e:
-            final_results.append({
-                "file_name": file_name,
-                "fields": [],
+            final_results[file_name] = {
+                "invoice_number": 0,
+                "fields": {},
                 "missing_fields": [],
                 "error": str(e),
                 "source": "Document Intelligence"
-            })
+            }
+    
+    return [final_results]
 
-    return final_results
 
 
 class ImageFieldExtractor:
@@ -365,15 +357,17 @@ class ImageFieldExtractor:
                     {"role": "user", "content": user_content}
                 ]
 
+                total_tokens = 0  # Definir total_tokens antes del try-except
+
                 try:
-                    completion = self.openai_client.beta.chat.completions.create(
+                    completion = self.openai_client.chat.completions.create(
                         model=self.gpt_model_name,
                         messages=messages,
-                        max_tokens=5000,
+                        max_tokens=10000,
                         temperature=0.1,
-                        top_p=0.1,
-                        logprobs=True,
+                        top_p=0.1
                     )
+
 
                     # Asegurar que total_tokens siempre esté definido
                     prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)

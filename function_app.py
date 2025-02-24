@@ -47,8 +47,6 @@ def obtener_blob_por_url(blob: dict):
         response = requests.get(blob_url, headers=headers)
 
         if response.status_code == 200:
-            with open(blob_name.split("/")[-1], "wb") as f:
-                f.write(response.content)
             return {"file_name": blob_name, "content": response.content}
         else:
             logging.error(f"Error al descargar {blob_name}: {response.text}")

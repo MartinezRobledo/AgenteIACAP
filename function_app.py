@@ -9,6 +9,7 @@ import base64
 import datetime
 import os
 from dotenv import load_dotenv
+from azure.storage.blob import ContainerClient
 
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
@@ -18,6 +19,7 @@ load_dotenv()
 
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
+CONTAINER_NAME = os.getenv("CONTAINER_NAME")
 
 def generar_firma_azure(verb, content_length, content_type, date, canonicalized_resource):
     """Genera la firma para la autenticación con la Access Key"""
@@ -26,17 +28,15 @@ def generar_firma_azure(verb, content_length, content_type, date, canonicalized_
     signature = base64.b64encode(hmac.new(key, string_to_sign.encode('utf-8'), hashlib.sha256).digest()).decode()
     return f"SharedKey {STORAGE_ACCOUNT_NAME}:{signature}"
 
-def obtener_blob_por_url(blob_url: str):
+def obtener_blob_por_url(blob: dict):
     """Descarga un archivo desde Azure Blob Storage usando su URL autenticada con Access Key."""
     try:
-        if isinstance(blob_url, dict):  # Verificar si 'file_url' es un diccionario
-            blob_url = blob_url.get("url", "")
-        
-        # Extraer el nombre del blob de la URL
-        blob_name = blob_url.split("/")[-1]
+        if isinstance(blob, dict):  # Verificar si 'file_url' es un diccionario
+            blob_url = blob.get("url", "")
+            blob_name = blob.get("file_name", "")
 
         date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/attachments/{blob_name}"
+        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/{CONTAINER_NAME}/{blob_name}"
 
         headers = {
             "x-ms-date": date,
@@ -47,14 +47,16 @@ def obtener_blob_por_url(blob_url: str):
         response = requests.get(blob_url, headers=headers)
 
         if response.status_code == 200:
+            with open(blob_name.split("/")[-1], "wb") as f:
+                f.write(response.content)
             return {"file_name": blob_name, "content": response.content}
         else:
-            logging.error(f"❌ Error al descargar {blob_name}: {response.text}")
-            return None
+            logging.error(f"Error al descargar {blob_name}: {response.text}")
+            raise
 
     except Exception as e:
-        logging.error(f"❌ Error al obtener archivo por URL: {e}")
-        return None
+        logging.error(f"Error al obtener archivo por URL: {e}")
+        raise
     
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -65,13 +67,14 @@ async def AgenteIACAP(req: func.HttpRequest) -> func.HttpResponse:
     loop = asyncio.get_running_loop()
     loop.set_task_factory(None)
 
+    # listar_blobs()
     try:
         body = req.get_json()
         asunto = body.get("asunto")
         cuerpo = body.get("cuerpo")
         urls_adjuntos = body.get("adjuntos")  # Ahora recibimos URLs en lugar de IDs
 
-    except ValueError as e:
+    except Exception as e:
         return func.HttpResponse(f"Body no válido. Error: {e}", status_code=400)
 
     # Validar que 'adjuntos' sea una lista de URLs
@@ -82,13 +85,16 @@ async def AgenteIACAP(req: func.HttpRequest) -> func.HttpResponse:
             status_code=400
         )
 
-    adjuntos = []
-    for file_url in urls_adjuntos:
-        archivo = obtener_blob_por_url(file_url)  # Llamada sin 'await'
-        if archivo:
-            adjuntos.append(archivo)
-        else:
-            logging.warning(f"⚠️ No se pudo obtener el archivo desde {file_url}")
+    try:
+        adjuntos = []
+        for file_url in urls_adjuntos:
+            archivo = obtener_blob_por_url(file_url)
+            if archivo:
+                adjuntos.append(archivo)
+            else:
+                logging.warning(f"No se pudo obtener el archivo desde {file_url}")
+    except:
+        return func.HttpResponse("Error al obtener archivos del storage.", status_code=500)
 
     # Crear el objeto de entrada para el flujo
     input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos)

@@ -1,6 +1,6 @@
 [project]
 name = "agentiacap"
-version = "0.1.4"
+version = "0.1.5"
 description = ""
 authors = [
     {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},
@@ -25,6 +25,7 @@ dependencies = [
     "langgraph-api (>=0.0.22,<0.0.23)",
     "langchain (>=0.3.18,<0.4.0)",
     "azure-storage-blob (>=12.24.1,<13.0.0)",
+    "fastapi (>=0.115.8,<0.116.0)",
 ]
 
 

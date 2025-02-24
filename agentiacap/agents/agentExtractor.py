@@ -1,3 +1,4 @@
+import base64
 import operator
 import json
 import logging
@@ -51,7 +52,7 @@ merger = merger_definition | llm4o.with_structured_output(ResultExtraction)
 
 class State(TypedDict):
     aggregate: Annotated[list, operator.add]
-    tokens: int
+    tokens:Annotated[int, operator.add]
     text: str   # Almacena asunto y cuerpo del mail
     images: list  # Almacena las imagenes adjuntas
     pdfs: list  # Almacena los pdfs adjuntos
@@ -97,7 +98,7 @@ class VisionNode:
                     }
                     images_from_pdfs.append(image)
             extractor = ImageFieldExtractor()
-            result = extractor.extract_fields_binary(binary_images=state["images"]+images_from_pdfs, fields_to_extract=fields_to_extract)
+            result = extractor.extract_fields(base64_images=images_from_pdfs, fields_to_extract=fields_to_extract)
             tokens = 0
             for element in result:
                 tokens += int(result[element]["tokens"])
@@ -109,15 +110,28 @@ class VisionNode:
 class ImageNode:
     async def __call__(self, state: State) -> State:
         try:
+            images_b64 = []
+            for image in state["images"]:
+                image64 = {
+                    "file_name": image["file_name"],
+                    "content": base64.b64encode(image["content"]).decode('utf-8')
+                }
+                images_b64.append(image64)
+
             extractor = ImageFieldExtractor()
-            result = extractor.extract_fields_binary(binary_images=state["images"], fields_to_extract=fields_to_extract)
+            result = extractor.extract_fields(base64_images=images_b64, fields_to_extract=fields_to_extract)
+
             tokens = 0
-            for element in result:
-                tokens += int(result[element]["tokens"])
+            if isinstance(result, dict):  # Verificar que es un diccionario
+                for element in result.values():  # Iterar sobre valores, no claves
+                    if isinstance(element, dict) and "tokens" in element:
+                        tokens += int(element["tokens"])
+
             return {"tokens": state["tokens"] + tokens, "aggregate": [result]}
         except Exception as e:
             logger.error(f"Error en 'ImageNode': {str(e)}")
             raise
+
 
 class PrebuiltNode():
     async def __call__(self, state: State) -> State:

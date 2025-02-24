@@ -250,12 +250,10 @@ class ImageFieldExtractor:
                     }
                     continue
                 # Intentar decodificar para validar contenido base64
-                print("DEBUG - Iniciando procesamiento de file ", file_name)
                 try:
                     base64.b64decode(content, validate=True)
-                except (base64.binascii.Error, ValueError) as error:
+                except Exception as error:
                     error_message = f"El contenido del archivo en base64 no es válido. Error: {error}"
-                    print(f"Archivo {file_name}. {error_message}")
                     all_results[file_name] = {
                         "fields": {},
                         "missing_fields": [],
@@ -263,7 +261,6 @@ class ImageFieldExtractor:
                         "source": "Vision"
                     }
                     continue
-                print("DEBUG - Continuando procesamiento de file ", file_name)
 
                 user_content = self.create_user_content(content, fields_to_extract)
 
@@ -272,11 +269,13 @@ class ImageFieldExtractor:
                     {"role": "user", "content": user_content}
                 ]
 
+                total_tokens = 0  # Definir total_tokens antes del try-except
+
                 try:
                     completion = self.openai_client.beta.chat.completions.parse(
                         model=self.gpt_model_name,
                         messages=messages,
-                        max_tokens=5000,
+                        max_tokens=10000,
                         temperature=0.1,
                         top_p=0.1,
                         logprobs=True,
@@ -346,8 +345,6 @@ class ImageFieldExtractor:
                         "source": "Vision"
                     }
                     continue
-
-                print("DEBUG - Iniciando procesamiento de file ", file_name)
 
                 # Crear input con el contenido binario
                 user_content = self.create_user_content(content, fields_to_extract)

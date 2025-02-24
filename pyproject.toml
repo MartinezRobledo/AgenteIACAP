@@ -1,6 +1,6 @@
 [project]
 name = "agentiacap"
-version = "0.1.5"
+version = "0.1.7"
 description = ""
 authors = [
     {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},

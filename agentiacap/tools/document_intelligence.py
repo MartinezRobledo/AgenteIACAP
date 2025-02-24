@@ -155,8 +155,8 @@ class ImageFieldExtractor:
         :param api_version: Versión de la API de Azure OpenAI.
         """
         self.openai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("OPENAI_ENDPOINT"),
-            api_key=os.getenv("OPENAI_API_KEY"),  # Usamos la API key para autenticación
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # Usamos la API key para autenticación
             api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
         )
         self.gpt_model_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o")

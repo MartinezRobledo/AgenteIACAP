@@ -9,7 +9,6 @@ import base64
 import datetime
 import os
 from dotenv import load_dotenv
-from azure.storage.blob import ContainerClient
 
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
@@ -19,7 +18,8 @@ load_dotenv()
 
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
-CONTAINER_NAME = os.getenv("CONTAINER_NAME")
+STORAGE_ACCOUNT_CONTAINER_NAME = os.getenv("STORAGE_ACCOUNT_CONTAINER_NAME")
+STORAGE_ACCOUNT_ENDPOINT = os.getenv("STORAGE_ACCOUNT_ENDPOINT")
 
 def generar_firma_azure(verb, content_length, content_type, date, canonicalized_resource):
     """Genera la firma para la autenticación con la Access Key"""
@@ -32,11 +32,11 @@ def obtener_blob_por_url(blob: dict):
     """Descarga un archivo desde Azure Blob Storage usando su URL autenticada con Access Key."""
     try:
         if isinstance(blob, dict):  # Verificar si 'file_url' es un diccionario
-            blob_url = blob.get("url", "")
             blob_name = blob.get("file_name", "")
 
         date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/{CONTAINER_NAME}/{blob_name}"
+        blob_url = f"{STORAGE_ACCOUNT_ENDPOINT}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name}"
+        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name}"
 
         headers = {
             "x-ms-date": date,

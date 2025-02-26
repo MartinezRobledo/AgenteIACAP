@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-        "cap_agent": "./aiagentcap/workflows/main.py:graph"
+        "cap_agent": "./agentiacap/workflows/main.py:graph"
     }
 }

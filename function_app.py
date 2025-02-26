@@ -9,7 +9,7 @@ import base64
 import datetime
 import os
 from dotenv import load_dotenv
-
+from urllib.parse import quote
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
 
@@ -34,9 +34,10 @@ def obtener_blob_por_url(blob: dict):
         if isinstance(blob, dict):  # Verificar si 'file_url' es un diccionario
             blob_name = blob.get("file_name", "")
 
+        blob_name_encoded = quote(blob_name, safe="/")
         date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-        blob_url = f"{STORAGE_ACCOUNT_ENDPOINT}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name}"
-        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name}"
+        blob_url = f"{STORAGE_ACCOUNT_ENDPOINT}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name_encoded}"
+        canonicalized_resource = f"/{STORAGE_ACCOUNT_NAME}/{STORAGE_ACCOUNT_CONTAINER_NAME}/{blob_name_encoded}"
 
         headers = {
             "x-ms-date": date,

@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 import json
 from azure.core.credentials import AzureKeyCredential
@@ -8,7 +9,7 @@ from openai import AzureOpenAI
 from typing import List
 from dotenv import load_dotenv
 from fastapi import UploadFile
-
+from typing_extensions import TypedDict
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
 # Cargar las variables de entorno desde el archivo .env
@@ -20,8 +21,8 @@ def initialize_client():
     key = os.getenv("AZURE_OPENAI_API_KEY")
     return DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
 
-def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extract: list) -> dict:
-    data = {}
+def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extract: list) -> list:
+    data = []
     try:
         poller = client.begin_analyze_document(
             "prebuilt-invoice", AnalyzeDocumentRequest(bytes_source=file_bytes)
@@ -41,17 +42,30 @@ def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extra
                         fields_data[field] = "none"
                         missing_fields.append(field)
                 
-                data = {
-                    "invoice_number": idx + 1,
+                data.append({
+                    "extraction_number": idx + 1,
                     "fields": fields_data,
                     "missing_fields": missing_fields,
-                    "error": ""
-                }
+                    "error": "",
+                    "source": "Document Intelligence"
+                })
         else:
-            data = {"error": "No se encontraron documentos en el archivo.", "fields": {}, "missing_fields": []}
+            data = [{
+                    "extraction_number": 0,
+                    "fields": {},
+                    "missing_fields": [],
+                    "error": "No se encontraron documentos en el archivo.",
+                    "source": "Document Intelligence"
+                }]
     
     except Exception as e:
-        data = {"error": str(e), "fields": {}, "missing_fields": []}
+        data = [{
+                    "extraction_number": 0,
+                    "fields": {},
+                    "missing_fields": [],
+                    "error": str(e),
+                    "source": "Document Intelligence"
+                }]
     
     return data
 
@@ -125,21 +139,16 @@ def process_binary_files(binary_files: list, fields_to_extract: list) -> list:
         try:
             text_result = analyze_document_prebuilt_invoice(client, content, fields_to_extract)
             
-            final_results[file_name] = {
-                "invoice_number": text_result["invoice_number"],
-                "fields": text_result["fields"],
-                "missing_fields": text_result["missing_fields"],
-                "error": text_result["error"],
-                "source": "Document Intelligence"
-            }
+            final_results[file_name] = text_result
+
         except Exception as e:
-            final_results[file_name] = {
+            final_results[file_name] = [{
                 "invoice_number": 0,
                 "fields": {},
                 "missing_fields": [],
                 "error": str(e),
                 "source": "Document Intelligence"
-            }
+            }]
     
     return [final_results]
 
@@ -154,10 +163,11 @@ class ImageFieldExtractor:
         :param api_key: Clave de la API para autenticación.
         :param api_version: Versión de la API de Azure OpenAI.
         """
+        print("API VERSION: ",os.getenv("AZURE_OPENAI_API_VERSION"))
         self.openai_client = AzureOpenAI(
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # Usamos la API key para autenticación
-            api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+            api_version="2024-08-01-preview"#os.getenv("AZURE_OPENAI_API_VERSION"),
         )
         self.gpt_model_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o")
 
@@ -215,11 +225,11 @@ class ImageFieldExtractor:
         Procesa la respuesta del modelo para extraer el JSON válido y convertirlo en un diccionario de campos.
         """
         extracted_data = completion.model_dump()
-        content = extracted_data['choices'][0]['message']['content']
-        json_content = content.strip('```json\n').strip('```')
-        data = json.loads(json_content)
+        content = extracted_data["choices"][0]["message"]["content"]
+        data = json.loads(content)
+        invoices = data.get("invoices",[])
 
-        return data
+        return invoices
 
     def extract_fields(self, base64_images: list, fields_to_extract: List[str]):
         """
@@ -242,24 +252,24 @@ class ImageFieldExtractor:
                 content = image_data.get("content", "")
 
                 if not content:
-                    all_results[file_name] = {
+                    all_results[file_name] = [{
                         "fields": {},
                         "missing_fields": [],
                         "error": "El contenido base64 está vacío.",
                         "source": "Vision"
-                    }
+                    }]
                     continue
                 # Intentar decodificar para validar contenido base64
                 try:
                     base64.b64decode(content, validate=True)
                 except Exception as error:
                     error_message = f"El contenido del archivo en base64 no es válido. Error: {error}"
-                    all_results[file_name] = {
+                    all_results[file_name] = [{
                         "fields": {},
                         "missing_fields": [],
                         "error": error_message,
                         "source": "Vision"
-                    }
+                    }]
                     continue
 
                 user_content = self.create_user_content(content, fields_to_extract)
@@ -272,48 +282,81 @@ class ImageFieldExtractor:
                 total_tokens = 0  # Definir total_tokens antes del try-except
 
                 try:
-                    completion = self.openai_client.beta.chat.completions.parse(
+                    logging.info(f"Se está por procesar la imagen {file_name} con el LLM")
+                    completion = self.openai_client.chat.completions.create(
                         model=self.gpt_model_name,
                         messages=messages,
                         max_tokens=10000,
                         temperature=0.1,
-                        top_p=0.1,
-                        logprobs=True,
+                        response_format={
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": "invoice_extraction",
+                                "strict": True,
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "invoices": {  # Ahora el array está dentro de un objeto
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "VendorName": {"type": ["string", "null"]},
+                                                    "CustomerName": {"type": ["string", "null"]},
+                                                    "CustomerTaxId": {"type": ["string", "null"]},
+                                                    "VendorTaxId": {"type": ["string", "null"]},
+                                                    "CustomerAddress": {"type": ["string", "null"]},
+                                                    "InvoiceId": {"type": ["string", "null"]},
+                                                    "InvoiceDate": {"type": ["string", "null"]},
+                                                    "InvoiceTotal": {"type": ["string", "null"]},
+                                                    "PurchaseOrderNumber": {"type": ["string", "null"]},
+                                                    "Signed": {"type": "boolean"}
+                                                },
+                                                "required": [
+                                                    "VendorName", "CustomerName", "CustomerTaxId", 
+                                                    "VendorTaxId", "CustomerAddress", "InvoiceId", 
+                                                    "InvoiceDate", "InvoiceTotal", "PurchaseOrderNumber", "Signed"
+                                                ],
+                                                "additionalProperties": False
+                                            }
+                                        }
+                                    },
+                                    "required": ["invoices"],
+                                    "additionalProperties": False
+                                }
+                            }
+                        }
                     )
 
-                    # Asegurar que total_tokens siempre esté definido
-                    prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
-                    completion_tokens = getattr(completion.usage, "completion_tokens", 0)
-                    total_tokens = prompt_tokens + completion_tokens
-
+                    # logging.info(f"Se ha procesado la imagen con el LLM.\nCompletion: \n{completion}")
                     data = self.parse_completion_response(completion)
-
-                    # Crear el diccionario de campos extraídos
-                    extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
-
-                    # Identificar campos faltantes
-                    missing_fields = [field for field, value in extracted_fields.items() if value is None]
-
-                    # Guardar resultados en un diccionario
-                    all_results[file_name] = {
-                        "invoice_number": index + 1,
-                        "fields": extracted_fields,
-                        "missing_fields": missing_fields,
-                        "error": "",
-                        "source": "Vision",
-                        "tokens": total_tokens
-                    }
-
+                    # print(f"Data: \n{data}")
+                    list_data = []
+                    for index, element in enumerate(data):
+                        # print("Index: ",index)
+                        # print("Value: ",element)
+                        list_data.append({
+                            "extraction_number": index + 1,
+                            "fields": element,
+                            "missing_fields": [],
+                            "source": "Vision",
+                            "tokens": total_tokens
+                        })
+                    # prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
+                    # completion_tokens = getattr(completion.usage, "completion_tokens", 0)
+                    # total_tokens = prompt_tokens + completion_tokens
+                    all_results[file_name] = list_data
+                    logging.info(f"Resultados de la imagen {file_name} guardados")
                 except Exception as model_error:
-                    all_results[file_name] = {
+                    all_results[file_name] = [{
                         "fields": {},
                         "missing_fields": [],
                         "error": str(model_error),
                         "source": "Vision",
                         "tokens": total_tokens
-                    }
+                    }]
 
-            return all_results
+            return [all_results]
         except Exception as e:
             return {"error": str(e)}
 
@@ -401,17 +444,3 @@ class ImageFieldExtractor:
             return all_results
         except Exception as e:
             return {"error": str(e)}
-
-
-
-
-# Ejemplo de uso
-# if __name__ == "__main__":
-#     base64_files = [
-#         {"file_name": "invoice1.pdf", "content": "<base64_string1>"},
-#         {"file_name": "invoice2.pdf", "content": "<base64_string2>"}
-#     ]  # Reemplaza <base64_string1> y <base64_string2> con los datos base64 reales
-#     fields_to_extract = ["InvoiceId", "CustomerName", "TotalAmount"]
-
-#     results = process_base64_files(base64_files, fields_to_extract)
-#     print(results)

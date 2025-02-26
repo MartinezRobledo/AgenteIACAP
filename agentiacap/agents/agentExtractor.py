@@ -45,7 +45,7 @@ class ResultExtraction(TypedDict):
     valores:Annotated[list, ...]
 
 class OutputState(TypedDict):
-    extractions:Annotated[list, operator.add]
+    extractions:Annotated[list, ...]
     tokens:Annotated[int, ...]
 
 merger = merger_definition | llm4o.with_structured_output(ResultExtraction)
@@ -58,13 +58,13 @@ class State(TypedDict):
     pdfs: list  # Almacena los pdfs adjuntos
 
 class Fields(TypedDict):
-    customer_name:str
-    customer_tax_id:str
-    invoice_id:str
-    vendor_tax_id:str
-    purchase_order_number:str
-    invoice_date:str
-    invoice_total:str
+    CustomerName:str
+    CustomerTaxId:str
+    InvoiceId:str
+    VendorTaxId:str
+    PurchaseOrderNumber:str
+    InvoiceDate:str
+    InvoiceTotal:str
 
 
 class ClassifyNode:
@@ -100,9 +100,10 @@ class VisionNode:
             extractor = ImageFieldExtractor()
             result = extractor.extract_fields(base64_images=images_from_pdfs, fields_to_extract=fields_to_extract)
             tokens = 0
-            for element in result:
-                tokens += int(result[element]["tokens"])
-            return {"tokens": state["tokens"] + tokens, "aggregate": [result]}
+            # for element in result:
+            #     tokens += int(result[element]["tokens"])
+            print(f"Resultado de extraccion: \n{result}")
+            return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
             logger.error(f"Error en 'VisionNode': {str(e)}")
             raise
@@ -120,14 +121,14 @@ class ImageNode:
 
             extractor = ImageFieldExtractor()
             result = extractor.extract_fields(base64_images=images_b64, fields_to_extract=fields_to_extract)
-
+            print(f"Resultado de extraccion: \n{result}")
             tokens = 0
-            if isinstance(result, dict):  # Verificar que es un diccionario
-                for element in result.values():  # Iterar sobre valores, no claves
-                    if isinstance(element, dict) and "tokens" in element:
-                        tokens += int(element["tokens"])
+            # for element in result:
+            #     for data in element.values():  # Iterar sobre valores, no claves
+            #         if isinstance(data, dict) and "tokens" in data:
+            #             tokens += int(data["tokens"])
 
-            return {"tokens": state["tokens"] + tokens, "aggregate": [result]}
+            return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
             logger.error(f"Error en 'ImageNode': {str(e)}")
             raise
@@ -137,7 +138,8 @@ class PrebuiltNode():
     async def __call__(self, state: State) -> State:
         try:
             result = process_binary_files(binary_files=state["pdfs"], fields_to_extract=fields_to_extract)
-            return {"aggregate": [result]}
+            print(f"Resultado de prebuilt: \n{result}")
+            return {"aggregate": result}
         except Exception as e:
             logger.error(f"Error en 'PrebuiltNode': {str(e)}")
             raise
@@ -149,7 +151,7 @@ class NamesAndCuitsNode:
             result = await llm4o.ainvoke(prompt)
             content = result.content.strip("```json").strip("```")  # Limpia los delimitadores
             data = json.loads(content)
-            return {"customer_name": data["CustomerName"], "customer_tax_id": data["CustomerTaxId"], "vendor_tax_id": data["VendorTaxId"]}
+            return {"CustomerName": data["CustomerName"], "CustomerTaxId": data["CustomerTaxId"], "VendorTaxId": data["VendorTaxId"]}
         except Exception as e:
             logger.error(f"Error en 'NamesAndCuitsNode': {str(e)}")
             raise
@@ -161,7 +163,7 @@ class InvoiceNode:
             result = await llm4o.ainvoke(prompt)
             content = result.content.strip("```json").strip("```")  # Limpia los delimitadores
             content = json.loads(content)
-            return {"invoice_id": content["InvoiceId"], "invoice_date": content["InvoiceDate"], "invoice_total": content["InvoiceTotal"]}
+            return {"InvoiceId": content["InvoiceId"], "InvoiceDate": content["InvoiceDate"], "InvoiceTotal": content["InvoiceTotal"]}
         except Exception as e:
             logger.error(f"Error en 'InvoiceNode': {str(e)}")
             raise
@@ -174,13 +176,13 @@ class MergeFieldsNode:
                 if field not in state:
                     missing_fields.append(field)
             result = {
-                "Mail":{
+                "Mail":[{
                     "page_number": 1,
                     "fields":state, 
                     "missing_fields":missing_fields, 
                     "error":"",
                     "source": "Mail"
-                },
+                }],
             }
             return {"aggregate": [result]}
         except Exception as e:
@@ -191,11 +193,13 @@ class MergeFieldsNode:
 def router(state: State) -> Sequence[str]:
     try:
         routes = []
+        
         if state["images"]:
             routes.append("extract from images")
         
         if state["pdfs"]:
             routes.append("extract with prebuilt")
+            routes.append("extract with vision")
 
         if len(routes) == 0:
             return ["merger"]
@@ -205,29 +209,39 @@ def router(state: State) -> Sequence[str]:
         logger.error(f"Error en 'router': {str(e)}")
         raise
 
-def merge_results(state: State) -> OutputState:
+async def merge_results(state: State) -> OutputState:
     try:
-        grouped_data = defaultdict(lambda: {"fields": {}, "missing_fields": [], "errors": []})
-        
+        grouped_data = defaultdict(lambda: {"extractions": defaultdict(list)})
+        print(f"Ingreso de datos Merge: \n{state['aggregate']}")
         for extraction in state["aggregate"]:
-            if isinstance(extraction, list):  # Si es una lista, tomamos el primer elemento (el dict real)
-                extraction = extraction[0] if extraction else {}
-            for file_name, data in extraction.items():
-                source = data.get("source", "Unknown")
-                grouped_data[source]["fields"].update(data.get("fields", {}))
-                grouped_data[source]["missing_fields"].extend(data.get("missing_fields", []))
-                if data.get("error"):
-                    grouped_data[source]["errors"].append(data["error"])
-        
-        formatted_data = [{"source": src, **values} for src, values in grouped_data.items()]
+            for file_name, data_list in extraction.items():
+                for data in data_list:
+                    source = data.get("source", "Unknown")  #Se obtiene la fuente
+                    grouped_data[source]["extractions"][file_name].append({
+                        "extraction_number": data.get("extraction_number"),
+                        "fields": data.get("fields", {}),
+                        "missing_fields": data.get("missing_fields", []),
+                        "tokens": data.get("tokens", 0)
+                    })
+
+        #Reformateo para cumplir con la estructura deseada
+        formatted_data = [
+            {
+                "source": src,
+                "extractions": [{file_name: extractions} for file_name, extractions in values["extractions"].items()]
+            }
+            for src, values in grouped_data.items()
+        ]
+
         return {"extractions": formatted_data, "tokens": state["tokens"]}
+
     except Exception as e:
-        logger.error(f"Error en 'merger': {str(e)}")
+        logger.error(f"Error en 'merge_results': {str(e)}")
         raise
 
 def should_continue(state:State):
     try:
-        return "vision"
+        return END
     except Exception as e:
         logger.error(f"Error en 'should_continue': {str(e)}")
         raise
@@ -249,7 +263,7 @@ builder.add_edge("initializer", "extract names and cuits")
 builder.add_edge("initializer", "extract invoices IDs")
 builder.add_edge("extract invoices IDs", "merge fields")
 builder.add_edge("extract names and cuits", "merge fields")
-builder.add_conditional_edges("initializer", router, ["extract with prebuilt", "extract from images", "merger"])
+builder.add_conditional_edges("initializer", router, ["extract with prebuilt", "extract from images", "extract with vision", "merger"])
 builder.add_conditional_edges("extract with prebuilt", should_continue, {"vision":"extract with vision", END:"merger"})
 builder.add_edge("extract from images", "merger")
 builder.add_edge("extract with vision", "merger")

@@ -52,16 +52,13 @@ def output_node(state: MailSchema) -> OutputSchema:
         for fuente in fuentes_prioritarias:
             for extraccion in extractions:
                 if extraccion["source"] == fuente:
-                    for archivo, datos in extraccion["extractions"][0].items():
-                        for item in datos:
-                            valor = item["fields"].get(campo)
-                            if valor:
-                                valor = valor.strip()
-                            else:
-                                valor = ""
-                            if valor:
-                                return valor
-        return ""
+                    for extraccion_data in extraccion["extractions"]:
+                        for archivo, datos in extraccion_data.items():
+                            for item in datos:
+                                valor = item["fields"].get(campo)
+                                if valor and valor.strip() and valor.lower() not in ["none", "", "-"]:  
+                                    return valor.strip()  # Retorna el primer valor válido
+        return None  # Si no encuentra nada válido, retorna None
 
     def obtener_facturas(extractions):
         facturas = []
@@ -121,21 +118,16 @@ def output_node(state: MailSchema) -> OutputSchema:
 
         return json_generado
 
-    def faltan_datos(categoria, resume):
+    def faltan_datos_requeridos(resume):
         required_fields = ["CUIT", "Sociedad"]
+        
+        # Verifica si falta algún campo requerido o está vacío
+        falta_campo_requerido = any(not resume.get(field) for field in required_fields)
 
-        if not all(field in resume and resume[field] for field in required_fields):
-            return True
+        # Verifica si no hay facturas o si todas las facturas tienen una "Fecha" vacía
+        falta_fecha_factura = not resume.get("Factura") or all(not factura.get("Fecha") for factura in resume["Factura"])
 
-        if categoria == "Impresión de OP y/o Retenciones":
-            if "Factura" not in resume or not resume["Factura"]:
-                return True
-
-        if categoria == "Pedido devolución retenciones":
-            if "Factura" not in resume or not any("Fecha" in factura and factura["Fecha"] for factura in resume["Factura"]):
-                return True
-
-        return False
+        return falta_campo_requerido or falta_fecha_factura
 
     def generate_message(cuerpo, category, resume):
         response = llm4o_mini.invoke(f"""En base a este mail de entrada: {cuerpo}. 
@@ -164,7 +156,7 @@ def output_node(state: MailSchema) -> OutputSchema:
         resume = generar_json(state) 
         logging.info("Json generado...")
         category = state.get("categoria", "Desconocida")
-        is_missing_data = faltan_datos(category, resume)
+        is_missing_data = faltan_datos_requeridos(resume)
         message = ""
         if is_missing_data:
             message = generate_message(state.get("cuerpo"), category, resume)

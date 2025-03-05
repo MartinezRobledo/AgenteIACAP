@@ -101,7 +101,7 @@ async def AgenteIACAP(req: func.HttpRequest) -> func.HttpResponse:
     try:
         response = await graph.ainvoke(input=input_data)
     except Exception as e:
-        logging.error(f"❌ Error al invocar graph.ainvoke: {e}")
+        logging.error(f"Error al invocar graph.ainvoke: {e}")
         return func.HttpResponse("Error al procesar la solicitud.", status_code=500)
 
     result = response.get("result", {})

@@ -131,7 +131,8 @@ def output_node(state: MailSchema) -> OutputSchema:
 
     def generate_message(cuerpo, category, resume):
         response = llm4o_mini.invoke(f"""En base a este mail de entrada: {cuerpo}. 
-                                 Redactá un mail con la siguiente estructura y alguna leve variación para que parezca redactado por un ser humano y que la respuesta no sea siempre la misma:
+                                Redactá un mail con la siguiente estructura y alguna leve variación para que parezca redactado por un ser humano y que la respuesta no sea siempre la misma.
+                                Se pide que la redacción sea utilizando español de Argentina:
  
                                 Estimado, 
                                 

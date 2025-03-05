@@ -15,10 +15,15 @@ llm4o_mini = AzureChatOpenAI(
 )
 
 llm4o = AzureChatOpenAI(
-    azure_deployment="gpt-4o",  
-    api_version="2024-08-01-preview",
+    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),  
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     temperature=0,
     max_tokens=10000,
     timeout=None,
     max_retries=2
 )
+
+# Mostrar todas las variables de entorno cargadas
+for key, value in os.environ.items():
+    if "AZURE" in key or "OPENAI" in key:  # Filtrar solo las relevantes
+        print(f"{key}={value}")

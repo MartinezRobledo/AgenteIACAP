@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 
 # Cargar variables de entorno desde el archivo .env
-load_dotenv()
+load_dotenv(override=True)
 
 llm4o_mini = AzureChatOpenAI(
     azure_deployment="gpt-4o-mini",  
@@ -22,8 +22,3 @@ llm4o = AzureChatOpenAI(
     timeout=None,
     max_retries=2
 )
-
-# Mostrar todas las variables de entorno cargadas
-for key, value in os.environ.items():
-    if "AZURE" in key or "OPENAI" in key:  # Filtrar solo las relevantes
-        print(f"{key}={value}")

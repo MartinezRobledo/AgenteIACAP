@@ -14,7 +14,8 @@ from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
 
 # Cargar las variables de entorno desde el archivo .env
-load_dotenv()
+load_dotenv(override=True)
+# Mostrar todas las variables de entorno cargadas
 
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")

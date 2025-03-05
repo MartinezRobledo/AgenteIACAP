@@ -130,9 +130,9 @@ def output_node(state: MailSchema) -> OutputSchema:
         return falta_campo_requerido or falta_fecha_factura
 
     def generate_message(cuerpo, category, resume):
-        response = llm4o_mini.invoke(f"""En base a este mail de entrada: {cuerpo}. 
-                                Redactá un mail con la siguiente estructura y alguna leve variación para que parezca redactado por un ser humano y que la respuesta no sea siempre la misma.
-                                Se pide que la redacción sea utilizando español de Argentina:
+        response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
+                                En base a este mail de entrada: {cuerpo}. 
+                                Redactá un mail con la siguiente estructura:
  
                                 Estimado, 
                                 
@@ -146,9 +146,12 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail>
                                 {resume}
                                 
-                                En caso que haya algún dato incorrecto, por favor aclaralo en tu respuesta.
-                                El mail lo va a leer una persona que no tiene conocimientos de sistemas y datos. Solo necesito el cuerpo del mail en html (ya que es el contenido de un mail) y no incluyas asunto en la respuesta.
-                                Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
+                                En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
+
+                                Instrucciones de salida:
+                                -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
+                                -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html y no incluyas asunto en la respuesta.
+                                -Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
                                  """)
         return response.content
 

@@ -125,7 +125,7 @@ def output_node(state: MailSchema) -> OutputSchema:
         falta_campo_requerido = any(not resume.get(field) for field in required_fields)
 
         # Verifica si no hay facturas o si todas las facturas tienen una "Fecha" vacía
-        falta_fecha_factura = not resume.get("Factura") or all(not factura.get("Fecha") for factura in resume["Factura"])
+        falta_fecha_factura = not resume.get("Factura") and all(not factura.get("Fecha") for factura in resume["Factura"])
 
         return falta_campo_requerido or falta_fecha_factura
 
@@ -149,6 +149,7 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
 
                                 Instrucciones de salida:
+                                -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
                                 -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
                                 -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html y no incluyas asunto en la respuesta.
                                 -Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
@@ -156,9 +157,9 @@ def output_node(state: MailSchema) -> OutputSchema:
         return response.content
 
     try:
-        logging.info("Terminando respuesta...")
+        print("Terminando respuesta...")
         resume = generar_json(state) 
-        logging.info("Json generado...")
+        print("Json generado...", resume)
         category = state.get("categoria", "Desconocida")
         is_missing_data = faltan_datos_requeridos(resume)
         message = ""

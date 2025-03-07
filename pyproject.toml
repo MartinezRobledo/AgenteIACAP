@@ -1,13 +1,13 @@
 [project]
 name = "agentiacap"
-version = "0.1.9"
+version = "0.1.12"
 description = ""
 authors = [
     {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},
     {name = "Eugenio Punti",email = "epunti@entaconsulting.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11.5,<4.0"
+requires-python = ">=3.10.0,<4.0"
 dependencies = [
     "langgraph (>=0.2.63,<0.3.0)",
     "langchain-openai (>=0.3.0,<0.4.0)",
@@ -22,10 +22,10 @@ dependencies = [
     "azure-functions (>=1.21.3,<2.0.0)",
     "python-dotenv (>=1.0.1,<2.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
-    "langgraph-api (>=0.0.22,<0.0.23)",
     "langchain (>=0.3.18,<0.4.0)",
     "azure-storage-blob (>=12.24.1,<13.0.0)",
     "fastapi (>=0.115.8,<0.116.0)",
+    "azure-functions-durable (>=1.2.10,<2.0.0)",
 ]
 
 

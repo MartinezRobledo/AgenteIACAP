@@ -3,6 +3,7 @@ import logging
 import json
 import requests
 import azure.functions as func
+import azure.durable_functions as df
 import hmac
 import hashlib
 import base64
@@ -10,17 +11,19 @@ import datetime
 import os
 from dotenv import load_dotenv
 from urllib.parse import quote
+
+from agentiacap.agents.agentExtractor import PrebuiltLayoutNode
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
 
 # Cargar las variables de entorno desde el archivo .env
-load_dotenv(override=True)
-# Mostrar todas las variables de entorno cargadas
+load_dotenv()
 
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 STORAGE_ACCOUNT_CONTAINER_NAME = os.getenv("STORAGE_ACCOUNT_CONTAINER_NAME")
 STORAGE_ACCOUNT_ENDPOINT = os.getenv("STORAGE_ACCOUNT_ENDPOINT")
+
 
 def generar_firma_azure(verb, content_length, content_type, date, canonicalized_resource):
     """Genera la firma para la autenticación con la Access Key"""
@@ -32,6 +35,7 @@ def generar_firma_azure(verb, content_length, content_type, date, canonicalized_
 def obtener_blob_por_url(blob: dict):
     """Descarga un archivo desde Azure Blob Storage usando su URL autenticada con Access Key."""
     try:
+
         if isinstance(blob, dict):  # Verificar si 'file_url' es un diccionario
             blob_name = blob.get("file_name", "")
 
@@ -57,33 +61,47 @@ def obtener_blob_por_url(blob: dict):
     except Exception as e:
         logging.error(f"Error al obtener archivo por URL: {e}")
         raise
-    
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-@app.route(route="AgenteIACAP", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
-async def AgenteIACAP(req: func.HttpRequest) -> func.HttpResponse:
+app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(route="orchestrators/{functionName}", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.durable_client_input(client_name="client")
+async def AgenteIACAP(req: func.HttpRequest, client) -> func.HttpResponse:
+    body = req.get_json()
+    function_name = req.route_params.get('functionName')
+    instance_id = await client.start_new(function_name, None, body)
+    response = client.create_check_status_response(req, instance_id)
+    return response
+
+# Orchestrator: coordina la ejecución de la actividad
+@app.orchestration_trigger(context_name="context")
+def AgenteIACAP_Orchestrator(context: df.DurableOrchestrationContext):
+    input_data = context.get_input()
+    result = yield context.call_activity("AgenteIACAP_Activity", input_data)
+    # result = yield context.call_activity("PedidoDevolucionOpyRet", input_data)
+    return result
+
+
+# Activity: realiza el procesamiento (por ejemplo, invoca graph.ainvoke)
+@app.activity_trigger(input_name="req")
+async def AgenteIACAP_Activity(req: dict) -> dict:
     logging.info("Python HTTP trigger function processed a request.")
 
-    loop = asyncio.get_running_loop()
-    loop.set_task_factory(None)
+    # loop = asyncio.get_running_loop()
+    # loop.set_task_factory(None)
 
-    # listar_blobs()
     try:
-        body = req.get_json()
-        asunto = body.get("asunto")
-        cuerpo = body.get("cuerpo")
-        urls_adjuntos = body.get("adjuntos")  # Ahora recibimos URLs en lugar de IDs
+        asunto = req["asunto"]
+        cuerpo = req["cuerpo"]
+        urls_adjuntos = req["adjuntos"]  # Ahora recibimos URLs en lugar de IDs
 
     except Exception as e:
-        return func.HttpResponse(f"Body no válido. Error: {e}", status_code=400)
+        return {"error": f"Body no válido. Error: {e}"}
 
     # Validar que 'adjuntos' sea una lista de URLs
     if not isinstance(urls_adjuntos, list):
-        return func.HttpResponse(
-            json.dumps({"error": "Los adjuntos deben ser una lista de URLs de archivos."}),
-            mimetype="application/json",
-            status_code=400
-        )
+
+        return {"error": "Los adjuntos deben ser una lista de URLs de archivos."}
 
     try:
         adjuntos = []
@@ -94,21 +112,54 @@ async def AgenteIACAP(req: func.HttpRequest) -> func.HttpResponse:
             else:
                 logging.warning(f"No se pudo obtener el archivo desde {file_url}")
     except:
-        return func.HttpResponse("Error al obtener archivos del storage.", status_code=500)
-
-    # Crear el objeto de entrada para el flujo
+        return {"error": "Error al obtener archivos del storage."}
+    
+    # Preparar la entrada para la orquestación
     input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos)
-
     try:
         response = await graph.ainvoke(input=input_data)
     except Exception as e:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
-        return func.HttpResponse("Error al procesar la solicitud.", status_code=500)
+        return {"error": "Error al procesar la solicitud."}
 
     result = response.get("result", {})
+    return result
 
-    return func.HttpResponse(
-        json.dumps(result, indent=2),
-        mimetype="application/json",
-        status_code=200
-    )
+@app.activity_trigger(input_name="req")
+async def PedidoDevolucionOpyRet(req: dict) -> dict:
+    logging.info("Python activity function processed a request.")
+
+    try:
+        inputs = req["inputs"]
+        urls_adjuntos = req["adjuntos"]
+
+    except Exception as e:
+        return {"error": f"Body no válido. Error: {e}"}
+
+    # Validar que 'adjuntos' sea una lista de URLs
+    if not isinstance(urls_adjuntos, list):
+        return {
+            "error": "Los adjuntos deben ser una lista de URLs de archivos."
+        }
+
+    try:
+        adjuntos = []
+        for file_url in urls_adjuntos:
+            archivo = obtener_blob_por_url(file_url)
+            if archivo:
+                adjuntos.append(archivo)
+            else:
+                logging.warning(f"No se pudo obtener el archivo desde {file_url}")
+    except Exception as e:
+        return {"error": f"Error al obtener archivos del storage. Error: {e}"}
+
+    # Crear el objeto de entrada para el flujo
+    input_state = {"pdfs": adjuntos}
+
+    try:
+        response = await PrebuiltLayoutNode()(input_state, inputs)
+    except Exception as e:
+        logging.error(f"Error al invocar graph.ainvoke: {e}")
+        return {"error": f"Error al procesar la solicitud. Error: {e}"}
+
+    return response.get("aggregate", {})

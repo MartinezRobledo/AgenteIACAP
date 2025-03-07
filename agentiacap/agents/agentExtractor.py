@@ -7,10 +7,10 @@ from typing_extensions import TypedDict
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
-from agentiacap.tools.document_intelligence import ImageFieldExtractor, process_binary_files
-from agentiacap.utils.globals import InputSchema
+from agentiacap.tools.document_intelligence import ImageFieldExtractor, process_binary_files, find_in_binary_files_layout
+from agentiacap.utils.globals import InputSchema, fields_to_extract_rpa
 from agentiacap.llms.llms import llm4o
-from agentiacap.llms.Prompts import TextExtractorPrompt, fields_to_extract, merger_definition
+from agentiacap.llms.Prompts import TextExtractorPrompt, fields_to_extract, merger_definition 
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 
 # Configuración del logger
@@ -100,8 +100,6 @@ class VisionNode:
             extractor = ImageFieldExtractor()
             result = extractor.extract_fields(base64_images=images_from_pdfs, fields_to_extract=fields_to_extract)
             tokens = 0
-            # for element in result:
-            #     tokens += int(result[element]["tokens"])
             print(f"Resultado de extraccion: \n{result}")
             return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
@@ -123,11 +121,6 @@ class ImageNode:
             result = extractor.extract_fields(base64_images=images_b64, fields_to_extract=fields_to_extract)
             print(f"Resultado de extraccion: \n{result}")
             tokens = 0
-            # for element in result:
-            #     for data in element.values():  # Iterar sobre valores, no claves
-            #         if isinstance(data, dict) and "tokens" in data:
-            #             tokens += int(data["tokens"])
-
             return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
             logger.error(f"Error en 'ImageNode': {str(e)}")
@@ -142,6 +135,35 @@ class PrebuiltNode():
             return {"aggregate": result}
         except Exception as e:
             logger.error(f"Error en 'PrebuiltNode': {str(e)}")
+            raise
+
+class PrebuiltLayoutNode():
+    async def __call__(self, state: State, inputs: list) -> State:
+        try:
+            result = []
+            for data in inputs:
+                invoice, date = data.get("invoice", ""), data.get("date", "")
+                user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
+                **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
+                **Flujo principal (obligatorio):
+                    - Busca en la columna "Referencia" el numero de factura: {invoice}. Si no encontras la factura intenta el flujo alternativo.
+                    - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+                    - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+                    - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
+                **Flujo alternativo (Opcional):
+                    - Busca en la columna "Fecha doc." la fecha: {date}. Si no encontras la fecha retorna.
+                    - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+                    - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+                    - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
+                **Retorno:
+                    - Se debe devolver unicamente los datos que se conocen.
+                    - Los datos que no se encontraron se deben indicar como un string vacío.
+                    - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
+                    - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
+                result += find_in_binary_files_layout(binary_files=state["pdfs"], fields_to_extract=fields_to_extract_rpa, mothod_prompt=user_text_prompt)
+            return {"aggregate": result}
+        except Exception as e:
+            logger.error(f"Error en 'PrebuiltLayoutNode': {str(e)}")
             raise
 
 class NamesAndCuitsNode:
@@ -184,6 +206,7 @@ class MergeFieldsNode:
                     "source": "Mail"
                 }],
             }
+            print(f"Salida de Text extractor: {result}")
             return {"aggregate": [result]}
         except Exception as e:
             logger.error(f"Error en 'MergeFieldsNode': {str(e)}")
@@ -267,7 +290,7 @@ builder.add_conditional_edges("initializer", router, ["extract with prebuilt", "
 builder.add_conditional_edges("extract with prebuilt", should_continue, {"vision":"extract with vision", END:"merger"})
 builder.add_edge("extract from images", "merger")
 builder.add_edge(["extract with vision", "merge fields"], "merger")
-# builder.add_edge("merge fields", "merger")
+builder.add_edge("merge fields", "merger")
 builder.add_edge("merger", END)
 
 extractor = builder.compile()

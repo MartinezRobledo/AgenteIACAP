@@ -51,6 +51,11 @@ fields_to_extract = [
     "Signed"
 ]
 
+fields_to_extract_rpa = [
+    "purchase_number",
+    "due_date",
+]
+
 lista_sociedades = [
     {"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685218190", "Nombre en AFIP": "ASTRA EVANGELISTA SA"},
     {"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."},

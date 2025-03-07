@@ -10,10 +10,80 @@ from typing import List
 from dotenv import load_dotenv
 from fastapi import UploadFile
 from typing_extensions import TypedDict
+from azure.ai.documentintelligence.models import AnalyzeResult, DocumentContentFormat
+from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
+from typing import Optional
+from pydantic import BaseModel, Field
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
+class SapReg(BaseModel):
+    """
+    A class representing an address in an invoice.
+
+    Attributes:
+        invoice: Invoice number
+        date: Invoice date
+        amount: total amount
+    """
+
+    invoice: Optional[str] = Field(
+        description='Dato ubicado en la columna "Referencia" y cumple con ser un numero con el formato ddddAdddddddd'
+    )
+    date: Optional[str] = Field(
+        description='Dato ubicado en la columna "FechaDoc" y cumple con ser una fecha formato dd.MM.yyyy'
+    )
+    due_date: Optional[str] = Field(
+        description='Dato ubicado en la columna "Vence El" y cumple con ser una fecha formato dd.MM.yyyy'
+    )
+    purchase_number: Optional[str] = Field(
+        description='Dato ubicado en la columna "Nº doc." y cumple con ser un numero de 10 digitos'
+    )
+    op_date: Optional[str] = Field(
+        description='Dato ubicado en la columna "Fecha doc." y representa la fecha de purchase_number'
+    )
+    found: Optional[bool] = Field(
+        description='Indica si se encontró el purchase_number. Por defecto es False'
+    )
+    overdue: Optional[bool] = Field(
+        description='Indica si True si la fecha actual es mayor a la fecha de due_date. Por defecto es False'
+    )
+
+    @staticmethod
+    def example():
+        """
+        Creates an empty example InvoiceAddress object.
+
+        Returns:
+            InvoiceAddress: An empty InvoiceAddress object.
+        """
+
+        return SapReg(
+            invoice='',
+            date='',
+            amount='',
+        )
+
+class SapTable(BaseModel):
+    """
+    A class representing a table of invoices with multiple rows.
+    
+    Attributes:
+        invoices: A list of Invoice objects.
+    """
+    invoices: List[SapReg]
+
+    @staticmethod
+    def example():
+        """
+        Creates an empty example InvoiceTable object.
+
+        Returns:
+            InvoiceTable: An empty InvoiceTable object with no invoices.
+        """
+        return SapTable(invoices=[])
+
 # Cargar las variables de entorno desde el archivo .env
-load_dotenv()
+load_dotenv(override=True)
 
 
 def initialize_client():
@@ -65,6 +135,89 @@ def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extra
                     "missing_fields": [],
                     "error": str(e),
                     "source": "Document Intelligence"
+                }]
+    
+    return data
+
+def analyze_document_layout(client, file_bytes: bytes, fields_to_extract: list, user_prompt: str) -> list:
+    data = []
+    try:
+        poller = client.begin_analyze_document(
+            model_id="prebuilt-layout", 
+            body=file_bytes,
+            output_content_format=DocumentContentFormat.MARKDOWN,
+            content_type="application/pdf"
+        )
+        result: AnalyzeResult = poller.result()
+        documents = result.content
+
+        system_prompt = f"""You are an AI assistant that extracts data from documents."""
+        user_content = []
+
+        user_content.append({
+            "type": "text",
+            "text": user_prompt
+        })
+
+        user_content.append({
+            "type": "text",
+            "text": documents
+        })
+        
+        openai_client = AzureOpenAI(
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # Usamos la API key para autenticación
+            api_version="2024-12-01-preview" # Requires the latest API version for structured outputs.
+        )
+        
+        completion = openai_client.beta.chat.completions.parse(
+            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_content
+                }
+            ],
+            response_format=SapTable,
+            max_tokens=10000,
+            temperature=0.1,
+            top_p=0.1,
+            logprobs=True # Enabled to determine the confidence of the response.
+        )
+        extractions = completion.choices[0].message.content
+        extractions = json.loads(extractions)
+        print("DEBUG-extractions: ", extractions)
+        extractions = extractions["invoices"]
+        if extractions:
+            for idx, element in enumerate(extractions):
+                missing_fields = []
+                data.append({
+                    "extraction_number": idx + 1,
+                    "fields": element,
+                    "missing_fields": missing_fields,
+                    "error": "",
+                    "source": "Document Intelligence - Layout"
+                })
+        else:
+            data = [{
+                    "extraction_number": 0,
+                    "fields": {},
+                    "missing_fields": [],
+                    "error": "No se encontraron documentos en el archivo.",
+                    "source": "Document Intelligence - Layout"
+                }]
+    
+    except Exception as e:
+        data = [{
+                    "extraction_number": 0,
+                    "fields": {},
+                    "missing_fields": [],
+                    "error": str(e),
+                    "source": "Document Intelligence - Layout"
                 }]
     
     return data
@@ -152,7 +305,30 @@ def process_binary_files(binary_files: list, fields_to_extract: list) -> list:
     
     return [final_results]
 
+def find_in_binary_files_layout(binary_files: list, fields_to_extract: list, mothod_prompt:str) -> list:
+    client = initialize_client()
+    final_results = {}
 
+    for file_data in binary_files:
+        file_name = file_data.get("file_name", "unknown")
+        content = file_data.get("content", b"")
+
+        try:
+            # Usar el modelo Layout en lugar del modelo de facturas
+            text_result = analyze_document_layout(client, content, fields_to_extract, mothod_prompt)
+            
+            final_results[file_name] = text_result
+
+        except Exception as e:
+            final_results[file_name] = [{
+                "document_id": 0,
+                "fields": {},
+                "missing_fields": [],
+                "error": str(e),
+                "source": "Document Intelligence - Layout"
+            }]
+    
+    return [final_results]
 
 class ImageFieldExtractor:
     def __init__(self):
@@ -444,3 +620,31 @@ class ImageFieldExtractor:
             return all_results
         except Exception as e:
             return {"error": str(e)}
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    file_path = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Ejemplos SAP y Esker\\CAP123Doc.pdf"
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+    fields_to_extract = ["purchase_number", "due_date"]
+    user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
+    **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
+    **Flujo principal (obligatorio):
+        - Busca en la columna "Referencia" el numero de factura: {''}. Si no encontras la factura intenta el flujo alternativo.
+        - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+        - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+        - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
+    **Flujo alternativo (Opcional):
+        - Busca en la columna "Fecha doc." la fecha: {'02.01.2025'}. Si no encontras la fecha retorna.
+        - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+        - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+        - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
+    **Retorno:
+        - Se debe devolver unicamente los datos que se conocen.
+        - Los datos que no se encontraron se deben indicar como un string vacío.
+        - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
+        - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
+    client = initialize_client()
+    result = analyze_document_layout(client, file_bytes, fields_to_extract, user_text_prompt)
+
+    print("Resultado de la extracción:", result)

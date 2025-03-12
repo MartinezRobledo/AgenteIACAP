@@ -114,46 +114,10 @@ async def process_json():
     cuerpo = content.get('cuerpo')
     adjuntos_list = content.get('adjuntos')
     try:
-        start_time = time.perf_counter()
-        
         input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos_list)
         response = await graph.ainvoke(input=input_data)
         result = response.get("result", {})
-        category = result.get("category", {})
-        print(f"DEBUG - Categoria obtenida: {category}")
-        extractions = result.get("extractions", {})
-        tokens = result.get("tokens", {})
-        print(f"DEBUG - Total de tokens: {tokens}")
-
-        if isinstance(extractions, list):
-            extractions = json.dumps(extractions)
-        data = json.loads(extractions)
-        # Diccionario para almacenar datos agrupados por "Fuente"
-        fuentes = {"Mail": [], "Document Intelligence": [], "Vision": []}
-        # Procesar los datos y agrupar por fuente
-        for item in data:
-            fuente = item["fuente"]
-            if fuente in fuentes:
-                fuentes[fuente].extend(item["valores"])
-
-        # Variables separadas por fuente
-        fuente_Mail = fuentes["Mail"]
-        fuente_Document_Intelligence = fuentes["Document Intelligence"]
-        fuente_Vision = fuentes["Vision"]
-
-                
-        
-        # Imprimir los resultados de las fuentes
-        print(f"DEBUG - Fuente 'Mail': {fuente_Mail}")
-        print(f"DEBUG - Fuente 'Document Intelligence': {fuente_Document_Intelligence}")
-        print(f"DEBUG - Fuente 'Vision': {fuente_Vision}")
-        
-        elapsed_time = time.perf_counter() - start_time
-        print(f"Tiempo total de procesamiento: {elapsed_time:.4f} segundos")
-        print(f"Caso procesado.")
-        
-        print(f"Caso procesado.")
-        time.sleep(1)
+        print("DEBUG-Result: ", result)
     except Exception as e:
         print(f"Error: {e}")
         time.sleep(2)

@@ -8,10 +8,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
 from agentiacap.tools.document_intelligence import ImageFieldExtractor, process_binary_files, find_in_binary_files_layout
-from agentiacap.utils.globals import InputSchema, fields_to_extract_rpa
+from agentiacap.utils.globals import InputSchema
 from agentiacap.llms.llms import llm4o
 from agentiacap.llms.Prompts import TextExtractorPrompt, fields_to_extract, merger_definition 
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # Configuración del logger
 logging.basicConfig(level=logging.ERROR)
@@ -61,11 +62,11 @@ class Fields(TypedDict):
     CustomerName:str
     CustomerTaxId:str
     InvoiceId:str
+    VendorName:str
     VendorTaxId:str
     PurchaseOrderNumber:str
     InvoiceDate:str
     InvoiceTotal:str
-
 
 class ClassifyNode:
     def __call__(self, state:InputSchema) -> State:
@@ -80,13 +81,19 @@ class ClassifyNode:
                     images.append(file)
                 elif file_name.endswith(pdf_extension):
                     pdfs.append(file)
-            return {"images": images, "pdfs": pdfs, "text": str(state["asunto"]) + str(state["cuerpo"]), "tokens":0}
+            return {
+                "images": images, 
+                "pdfs": pdfs, 
+                "text": f"""{state["asunto"] + " " + state["cuerpo"]}""", 
+                "tokens":0
+            }
         except Exception as e:
             logger.error(f"Error en 'ClassifyNode': {str(e)}")
             raise
 
 class VisionNode:
     async def __call__(self, state: State) -> State:
+        print(f"DEBUG-VisionNode")
         try:
             images_from_pdfs = []
             for file in state["pdfs"]:
@@ -108,6 +115,7 @@ class VisionNode:
 
 class ImageNode:
     async def __call__(self, state: State) -> State:
+        print(f"DEBUG-ImageNode")
         try:
             images_b64 = []
             for image in state["images"]:
@@ -129,6 +137,7 @@ class ImageNode:
 
 class PrebuiltNode():
     async def __call__(self, state: State) -> State:
+        print(f"DEBUG-Prebuilt")
         try:
             result = process_binary_files(binary_files=state["pdfs"], fields_to_extract=fields_to_extract)
             print(f"Resultado de prebuilt: \n{result}")
@@ -137,61 +146,35 @@ class PrebuiltNode():
             logger.error(f"Error en 'PrebuiltNode': {str(e)}")
             raise
 
-class PrebuiltLayoutNode():
-    async def __call__(self, state: State, inputs: list) -> State:
-        try:
-            result = []
-            for data in inputs:
-                invoice, date = data.get("invoice", ""), data.get("date", "")
-                user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
-                **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
-                **Flujo principal (obligatorio):
-                    - Busca en la columna "Referencia" el numero de factura: {invoice}. Si no encontras la factura intenta el flujo alternativo.
-                    - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-                    - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-                    - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
-                **Flujo alternativo (Opcional):
-                    - Busca en la columna "Fecha doc." la fecha: {date}. Si no encontras la fecha retorna.
-                    - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-                    - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-                    - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
-                **Retorno:
-                    - Se debe devolver unicamente los datos que se conocen.
-                    - Los datos que no se encontraron se deben indicar como un string vacío.
-                    - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
-                    - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
-                result += find_in_binary_files_layout(binary_files=state["pdfs"], fields_to_extract=fields_to_extract_rpa, mothod_prompt=user_text_prompt)
-            return {"aggregate": result}
-        except Exception as e:
-            logger.error(f"Error en 'PrebuiltLayoutNode': {str(e)}")
-            raise
 
 class NamesAndCuitsNode:
     async def __call__(self, state: State) -> Fields:
+        print(f"DEBUG-NamesCuitsNode")
         try:
-            prompt = [SystemMessage(content=TextExtractorPrompt.names_and_cuits_prompt)] + [HumanMessage(content=f"Dado el siguiente texto de un mail extrae el dato pedido: {state['text']}")]
-            result = await llm4o.ainvoke(prompt)
-            content = result.content.strip("```json").strip("```")  # Limpia los delimitadores
-            data = json.loads(content)
-            return {"CustomerName": data["CustomerName"], "CustomerTaxId": data["CustomerTaxId"], "VendorTaxId": data["VendorTaxId"]}
+            extractor = ChatPromptTemplate.from_messages([("system",TextExtractorPrompt.names_and_cuits_prompt),MessagesPlaceholder(variable_name="messages"),]) | llm4o.with_structured_output(Fields)
+            prompt = HumanMessage(content=f"Dado el siguiente texto de un mail extrae el dato pedido: {state['text']}")
+            result = await extractor.ainvoke([prompt])
+            return {"CustomerName": result["CustomerName"], "CustomerTaxId": result["CustomerTaxId"], "VendorName": result["VendorName"], "VendorTaxId": result["VendorTaxId"]}
         except Exception as e:
             logger.error(f"Error en 'NamesAndCuitsNode': {str(e)}")
             raise
 
 class InvoiceNode:
     async def __call__(self, state:State) -> Fields:
+        print(f"DEBUG-InvoiceNode")
         try:
-            prompt = [SystemMessage(content=TextExtractorPrompt.invoice_id_prompt)] + [HumanMessage(content=f"Dado el siguiente texto de un mail extrae los datos pedidos: {state['text']}")]
-            result = await llm4o.ainvoke(prompt)
-            content = result.content.strip("```json").strip("```")  # Limpia los delimitadores
-            content = json.loads(content)
-            return {"InvoiceId": content["InvoiceId"], "InvoiceDate": content["InvoiceDate"], "InvoiceTotal": content["InvoiceTotal"]}
+            extractor = ChatPromptTemplate.from_messages([("system",TextExtractorPrompt.invoice_id_prompt),MessagesPlaceholder(variable_name="messages"),]) | llm4o.with_structured_output(Fields)
+            prompt =  HumanMessage(content=f"Dado el siguiente texto de un mail extrae los datos pedidos: {state['text']}")
+            result = await extractor.ainvoke([prompt])
+            print("DEBUG-Se obtuvo result", result)
+            return {"InvoiceId": result["InvoiceId"], "InvoiceDate": result["InvoiceDate"], "InvoiceTotal": result["InvoiceTotal"]}
         except Exception as e:
             logger.error(f"Error en 'InvoiceNode': {str(e)}")
             raise
 
 class MergeFieldsNode:
     async def __call__(self, state: Fields) -> State:
+        print(f"DEBUG-MergeFields")
         try:
             missing_fields = []
             for field in fields_to_extract:
@@ -214,8 +197,12 @@ class MergeFieldsNode:
 
 # Analizo todo los adjuntos si los hay
 def router(state: State) -> Sequence[str]:
+    print(f"DEBUG-Router")
     try:
         routes = []
+
+        routes.append("extract names and cuits")
+        routes.append("extract invoices IDs")
         
         if state["images"]:
             routes.append("extract from images")
@@ -232,7 +219,11 @@ def router(state: State) -> Sequence[str]:
         logger.error(f"Error en 'router': {str(e)}")
         raise
 
+async def super_steps_balance(state: State):
+    return state
+
 async def merge_results(state: State) -> OutputState:
+    print(f"DEBUG-Merger")
     try:
         grouped_data = defaultdict(lambda: {"extractions": defaultdict(list)})
         print(f"Ingreso de datos Merge: \n{state['aggregate']}")
@@ -263,6 +254,7 @@ async def merge_results(state: State) -> OutputState:
         raise
 
 def should_continue(state:State):
+    print(f"DEBUG-SC")
     try:
         return END
     except Exception as e:
@@ -280,17 +272,18 @@ builder.add_node("extract from images", ImageNode())
 builder.add_node("extract with vision", VisionNode())
 builder.add_node("extract with prebuilt", PrebuiltNode())
 builder.add_node("merger", merge_results)
+builder.add_node("SSB", super_steps_balance)
 
 builder.add_edge(START, "initializer")
-builder.add_edge("initializer", "extract names and cuits")
-builder.add_edge("initializer", "extract invoices IDs")
 builder.add_edge("extract invoices IDs", "merge fields")
 builder.add_edge("extract names and cuits", "merge fields")
-builder.add_conditional_edges("initializer", router, ["extract with prebuilt", "extract from images", "extract with vision", "merger"])
-builder.add_conditional_edges("extract with prebuilt", should_continue, {"vision":"extract with vision", END:"merger"})
-builder.add_edge("extract from images", "merger")
-builder.add_edge(["extract with vision", "merge fields"], "merger")
+builder.add_conditional_edges("initializer", router, ["extract names and cuits", "extract invoices IDs", "extract with prebuilt", "extract from images", "extract with vision", "SSB"])
+# builder.add_conditional_edges("extract with prebuilt", should_continue, {"vision":"extract with vision", END:"merger"})
+builder.add_edge("extract with prebuilt", "SSB")
+builder.add_edge("extract from images", "SSB")
+builder.add_edge("extract with vision", "SSB")
 builder.add_edge("merge fields", "merger")
+builder.add_edge("SSB", "merger")
 builder.add_edge("merger", END)
 
 extractor = builder.compile()

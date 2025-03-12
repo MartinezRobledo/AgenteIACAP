@@ -103,31 +103,34 @@ def output_node(state: MailSchema) -> OutputSchema:
     def get_codSap(customer):
         for soc in lista_sociedades:
             if soc.get("Nombre Soc SAP") == customer:
-                return soc.get("Código SAP")
-        return customer
+                return {"Cod_Sociedad":soc.get("Código SAP"), "Sociedad": customer}
+        return {"Cod_Sociedad": "", "Sociedad":""}
 
     def generar_json(datos):
         extractions = datos.get("extracciones", [])
         fuentes_prioritarias = ["Mail", "Document Intelligence", "Vision"]
-
+        aux = get_codSap(obtener_valor_por_prioridad(extractions, "CustomerName", fuentes_prioritarias))
+        cod_soc, soc = aux["Cod_Sociedad"], aux["Sociedad"]
         json_generado = {
             "CUIT": obtener_valor_por_prioridad(extractions, "VendorTaxId", fuentes_prioritarias),
-            "Sociedad": get_codSap(obtener_valor_por_prioridad(extractions, "CustomerName", fuentes_prioritarias)),
+            "Proveedor": obtener_valor_por_prioridad(extractions, "VendorName", fuentes_prioritarias),
+            "Cod_Sociedad": cod_soc,
+            "Sociedad": soc,
             "Factura": obtener_facturas(extractions)
         }
 
         return json_generado
 
     def faltan_datos_requeridos(resume):
-        required_fields = ["CUIT", "Sociedad"]
+        required_fields = ["CUIT", "Cod_Sociedad"]
         
         # Verifica si falta algún campo requerido o está vacío
         falta_campo_requerido = any(not resume.get(field) for field in required_fields)
 
-        # Verifica si no hay facturas o si todas las facturas tienen una "Fecha" vacía
-        falta_fecha_factura = not resume.get("Factura") and all(not factura.get("Fecha") for factura in resume["Factura"])
+        # Verifica si no hay facturas
+        falta_factura = not resume.get("Factura")
 
-        return falta_campo_requerido or falta_fecha_factura
+        return falta_campo_requerido or falta_factura
 
     def generate_message(cuerpo, category, resume):
         response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
@@ -140,10 +143,9 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 CUIT
                                 Sociedad de YPF a la que se facturó
                                 Facturas (recordá mencionarlas con su numero completo 9999A99999999)
-                                Fecha de las facturas
                                 Montos
                                 De tu consulta pudimos obtener la siguiente información:
-                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail>
+                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas.>
                                 {resume}
                                 
                                 En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.

@@ -15,7 +15,7 @@ def clean_body(state: InputSchema) -> InputSchema:
     try:
         cuerpo_filtrado = clean.invoke([HumanMessage(
             content=f"""Limpia el siguiente mail:\n{state['cuerpo']}""")])
-        return {"cuerpo": cuerpo_filtrado}
+        return cuerpo_filtrado
     except Exception as e:
         raise RuntimeError(f"Error al limpiar el cuerpo del mail: {e}")
 

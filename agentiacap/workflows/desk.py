@@ -1,21 +1,28 @@
-def faltan_datos_requeridos(resume):
-    required_fields = ["CUIT", "Sociedad"]
+import asyncio
+
+async def funcA():
+    await asyncio.sleep(4)
+    return "Resultado A"
+
+async def funcB():
+    await asyncio.sleep(2)
+    return "Resultado B"
+
+async def funcC():
+    await asyncio.sleep(3)
+    return "Resultado C"
+
+async def ejecutar():
+    # Lanzamos las funciones en paralelo y esperamos sus resultados
+    resultados = await asyncio.gather(funcA(), funcB(), funcC())
+
+    # Guardamos los resultados en variables
+    resultado1, resultado2, resultado3 = resultados
     
-    # Verifica si falta algún campo requerido o está vacío
-    falta_campo_requerido = any(not resume.get(field) for field in required_fields)
+    # Imprimimos los resultados
+    print(resultado1)
+    print(resultado2)
+    print(resultado3)
 
-    # Verifica si no hay facturas o si todas las facturas tienen una "Fecha" vacía
-    falta_fecha_factura = not resume.get("Factura") or all(not factura.get("Fecha") for factura in resume["Factura"])
-
-    return falta_campo_requerido or falta_fecha_factura
-
-print(faltan_datos_requeridos({
-        "CUIT": "30-59053574-1",
-        "Sociedad": "0620",
-        "Factura": [
-            {
-                "ID": "FV-58-NPO-10003",
-                "Fecha": "20/11/2024"
-            }
-        ]
-    }))
+# Ejecutar la función principal
+asyncio.run(ejecutar())

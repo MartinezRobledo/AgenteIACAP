@@ -12,9 +12,9 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import quote
 
-from agentiacap.agents.agentExtractor import PrebuiltLayoutNode
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
+from agentiacap.workflows.extract_Sap_Esker import ExtractSAP, ExtractEsker
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
@@ -78,7 +78,7 @@ async def AgenteIACAP(req: func.HttpRequest, client) -> func.HttpResponse:
 def AgenteIACAP_Orchestrator(context: df.DurableOrchestrationContext):
     input_data = context.get_input()
     result = yield context.call_activity("AgenteIACAP_Activity", input_data)
-    # result = yield context.call_activity("PedidoDevolucionOpyRet", input_data)
+    # result = yield context.call_activity("ExtractionSapEsker", input_data)
     return result
 
 
@@ -126,7 +126,7 @@ async def AgenteIACAP_Activity(req: dict) -> dict:
     return result
 
 @app.activity_trigger(input_name="req")
-async def PedidoDevolucionOpyRet(req: dict) -> dict:
+async def ExtractionSap(req: dict) -> dict:
     logging.info("Python activity function processed a request.")
 
     try:
@@ -153,11 +153,44 @@ async def PedidoDevolucionOpyRet(req: dict) -> dict:
     except Exception as e:
         return {"error": f"Error al obtener archivos del storage. Error: {e}"}
 
-    # Crear el objeto de entrada para el flujo
-    input_state = {"pdfs": adjuntos}
+    try:
+        response = await ExtractSAP(adjuntos, inputs)
+    except Exception as e:
+        logging.error(f"Error al invocar graph.ainvoke: {e}")
+        return {"error": f"Error al procesar la solicitud. Error: {e}"}
+
+    return response.get("aggregate", {})
+
+@app.activity_trigger(input_name="req")
+async def ExtractionEsker(req: dict) -> dict:
+    logging.info("Python activity function processed a request.")
 
     try:
-        response = await PrebuiltLayoutNode()(input_state, inputs)
+        inputs = req["inputs"]
+        urls_adjuntos = req["adjuntos"]
+
+    except Exception as e:
+        return {"error": f"Body no válido. Error: {e}"}
+
+    # Validar que 'adjuntos' sea una lista de URLs
+    if not isinstance(urls_adjuntos, list):
+        return {
+            "error": "Los adjuntos deben ser una lista de URLs de archivos."
+        }
+
+    try:
+        adjuntos = []
+        for file_url in urls_adjuntos:
+            archivo = obtener_blob_por_url(file_url)
+            if archivo:
+                adjuntos.append(archivo)
+            else:
+                logging.warning(f"No se pudo obtener el archivo desde {file_url}")
+    except Exception as e:
+        return {"error": f"Error al obtener archivos del storage. Error: {e}"}
+
+    try:
+        response = await ExtractEsker(adjuntos, inputs)
     except Exception as e:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
         return {"error": f"Error al procesar la solicitud. Error: {e}"}

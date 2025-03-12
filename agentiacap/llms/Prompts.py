@@ -7,20 +7,20 @@ cleaner_definition = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-            Eres un agente especializado en limpiar correos electrónicos. Tu tarea es extraer únicamente la conversación relevante entre las partes involucradas (como preguntas, respuestas y comentarios útiles). Debes eliminar todo lo que no sea parte de la conversación directa, incluyendo:
+            Eres un agente especializado en limpiar correos electrónicos. Tu tarea es extraer únicamente la conversación relevante entre las partes involucradas (como preguntas, respuestas y comentarios útiles). 
+            Debes eliminar todo lo que no sea parte de la conversación directa, incluyendo:
+            -Firmas automáticas (nombre, cargo, empresa, teléfonos, etc.).
+            -Cabeceras de correo (como "De:", "Para:", "Asunto:", "Enviado:").
+            -Respuestas previas repetidas en cadenas largas de correos.
+            -Publicidad, disclaimers legales, y pie de página.
+            -Texto decorativo o irrelevante (como saludos genéricos y despedidas excesivamente largas).
 
-            Firmas automáticas (nombre, cargo, empresa, teléfonos, etc.).
-            Cabeceras de correo (como "De:", "Para:", "Asunto:", "Enviado:").
-            Respuestas previas repetidas en cadenas largas de correos.
-            Publicidad, disclaimers legales, y pie de página.
-            Texto decorativo o irrelevante (como saludos genéricos y despedidas excesivamente largas).
             Reglas para procesar el email:
-
-            Conserva solo el intercambio de mensajes relevante entre las partes.
-            Mantén el texto legible y organizado en un formato limpio.
-            No alteres el contenido relevante ni lo parafrasees.
-            Ignora elementos irrelevantes como saludos triviales o cortesías sin importancia.
-            Devuelve el resultado como un bloque de texto claro y organizado.
+            -Conserva solo el intercambio de mensajes relevante entre las partes.
+            -Mantén el texto legible y organizado en un formato limpio.
+            -No alteres el contenido relevante ni lo parafrasees.
+            -Ignora elementos irrelevantes como saludos triviales o cortesías sin importancia.
+            -Devuelve el resultado como un bloque de texto claro y organizado.
             """,
         ),
         MessagesPlaceholder(variable_name="messages"),
@@ -202,7 +202,7 @@ class TextExtractorPrompt:
             - Los datos que NO se logran extraer van a formar parte de un array del campo 'missing_fields'.
             - Los datos que estan dentro de 'missing_fields' no poseen valor por lo que solo se indica el nombre del campo.
             - Los datos se pueden encontrar tanto en el cuerpo como en el asunto del mail.
-            - Los numero CUIT cumplen con el formato de 11 digitos numericos donde tanto los primeros 2 como el ultimo pueden estar separados del resto mediante un caracter '-' o un espacio.
+            - Los numeros CUIT cumplen con el formato de 11 digitos numericos donde tanto los primeros 2 como el ultimo pueden estar separados del resto mediante un caracter '-' o un espacio. El último número es opcional por lo que se podría encontrar el CUIT como un número de 10 digitos.
             - Responde en formato JSON con las claves de los datos solicitados y sus valores extraídos.
             - Mantén el formato original de los valores y evita interpretaciones subjetivas.
 
@@ -237,7 +237,7 @@ class TextExtractorPrompt:
             - Siempre vas a devolver la sociedad encontrada como se indique en el apartado 'Nombre Soc SAP' de ese elemento.
             **Ejemplo: Si encontras el valor '30715142658' que corresponde al campo 'CUIT' del elemento cuyo campo 'Nombre Soc SAP' es 'UTE EL OREJANO' y entonces devolves el valor 'UTE EL OREJANO'.
 
-            - Para que Customer Name sea "YPF S.A." se tiene que encontrar ese texto literal en el mail o el literal "YPF SA".
+            - Para que Customer Name sea "YPF S.A." se tiene que encontrar ese texto literal en el mail o el literal "YPF SA". Para las razones sociales que no sean YPF se puede ser un poco mas flexible.
 
             **Salida esperada:**
             - Se espera que los datos de salida sean en formato json.
@@ -255,8 +255,10 @@ class TextExtractorPrompt:
 
     names_and_cuits_prompt = """Eres un asistente especializado en extraer datos del texto de un email.
     **Los datos a extraer son:
-    -"VendorTaxId": se refiere al numero de CUIT de quien realiza la consulta o el reclamo en el mail. No siempre esta presente este numero pero cuando lo está es explícito.
+    -"VendorName": es el nombre de la empresa que representa la persona que realiza la consulta/reclamo en el mail.
+    -"VendorTaxId": se refiere al numero de CUIT de quien realiza la consulta o el reclamo en el mail. No siempre esta presente este numero pero cuando lo está es explícito. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail. Es un numero con la forma dd-dddddddd-d, los caracteres de separacion son opcionales al igual que el ultimo digito.
     -"CustomerName": se refiere a la sociedad por la que se hace la consulta. Solo se pueden incluir las sociedades permitidas en la lista de sociedades. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail.
+    -"CustomerTaxId": es el número CUIT de la sociedad por la que se hace la consulta, y se tiene que poder encontrar en la lista de sociedades.
     **Lista de sociedades permitidas:
     -"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685218190", "Nombre en AFIP": "ASTRA EVANGELISTA SA"
     -"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."
@@ -288,14 +290,16 @@ class TextExtractorPrompt:
     **Aclaraciones generales:**
     - Que se mencione "YPF-CAP" o "YPF" no es suficiente para que CustomerName sea YPF S.A. y esto es asi porque YPF S.A. es una sociedad dentro de la empresa YPF.
     - YPF SA puede ser considerado como YPF S.A.
+    - Para las razones sociales que no sean YPF se puede ser un poco mas flexible.
     - No siempre esta presente algun dato de la sociedad en el mail, en caso de no encontrarlo devolve un string vacío.
     - No siempre esta presente el VendorTaxId, en caso de no encontrarlo devuelve un string vacío.
 
      **Salida esperada:**
-    - Se espera que devuelvas un json con:
-        -"CustomerName": valor del dato pedido.
-        -"CustomerTaxId": se obtiene de la lista de sociedades si y solo si se pudo detectar un CustomerName.
-        -"VendorTaxId": valor del dato pedido.
+    - Se espera que devuelvas un json con el formato:
+        -"CustomerName": "".
+        -"CustomerTaxId": "".
+        -"VendorTaxId": "".
+        -"VendorName": "".
     En caso de que suceda que "VendorTaxId" sea igual a "CustomerTaxId", eliminar el dato del "VendorTaxId".
     """
 
@@ -323,7 +327,7 @@ Notas pedido de devolucion de retenciones: Debe contener el texto "dichas retenc
 Siempre viene adjunto con el certificado de retenciones, no se hacen extracciones sobre este archivo.
 Debe tener firma del proveedor sino rechazar la extracción de datos.
 
-Pedido de OP y o retenciones: Se suele deja el numero de factura, la razon social del proveedor y la sociedad de YPF.
+Pedido de OP y o retenciones: Se suele dejar el numero de factura, la razon social del proveedor y la sociedad de YPF.
 
 Formato de factura para SAP
 0001A00000058

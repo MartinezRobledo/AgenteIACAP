@@ -51,11 +51,6 @@ fields_to_extract = [
     "Signed"
 ]
 
-fields_to_extract_rpa = [
-    "purchase_number",
-    "due_date",
-]
-
 lista_sociedades = [
     {"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685218190", "Nombre en AFIP": "ASTRA EVANGELISTA SA"},
     {"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."},
@@ -85,3 +80,17 @@ relevant_categories = [
     "Pedido devolución retenciones", 
     "Impresión de OP y/o Retenciones"
 ]
+
+prompt_nota_modelo = """
+Analiza el siguiente archivo PDF y responde en formato JSON si cumple con las siguientes condiciones:
+
+1. El documento está firmado.
+2. Contiene el siguiente texto exacto en algún lugar: "dichas retenciones no se computaron ni se computarán".
+
+Formato de respuesta esperado (sin explicaciones adicionales):
+
+{
+  "firmado": true/false,
+  "contiene_texto": true/false
+}
+"""

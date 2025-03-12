@@ -21,6 +21,7 @@ cleaner_definition = ChatPromptTemplate.from_messages(
             -No alteres el contenido relevante ni lo parafrasees.
             -Ignora elementos irrelevantes como saludos triviales o cortesías sin importancia.
             -Devuelve el resultado como un bloque de texto claro y organizado.
+            -No hagas un resumen de la información ni le cambies el formato a los datos que se presenten.
             """,
         ),
         MessagesPlaceholder(variable_name="messages"),

@@ -297,6 +297,7 @@ class TextExtractorPrompt:
     -El numero de factura generalmente se menciona de forma explicita, pero en el caso de no estar de esa forma intenta encontrarlo siguiendo las reglas que lo conforman.
     -El numero de factura no siempre esta presente y si el remitente menciona que el dato esta adjunto muy posiblemente no se encuentre en el texto del mail.
     -Los mails suelen tener un numero de caso del centro de atencion a proveedores que generalmente se menciona como "YPF-CAP", no se debe confundir ese numero con el numero de factura.
+    -Si hay adjuntos se te van a pasar los nombres de cada uno de los archivos separados por '/' y deberás extraer el InvoiceId. Puede que mas de uno tenga un InvoiceId como puede que ninguno lo tenga.
     Se espera que solo devuelvas el dato tal como lo encontraste, sin modificarlo. En caso de no encontrar un dato que cumpla con lo pedido entonces devolve solo un string vacío. En caso de obtener mas de un numero de factura devolvelos en un array.
     """
 

@@ -53,8 +53,9 @@ def obtener_blob_por_url(blob: dict):
         if response.status_code == 200:
             return {"file_name": blob_name, "content": response.content}
         else:
-            logging.error(f"Error al descargar {blob_name}: {response.text}")
-            raise
+            error_msg = f"Error al descargar {blob_name}: {response.text}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg)
 
     except Exception as e:
         logging.error(f"Error al obtener archivo por URL: {e}")

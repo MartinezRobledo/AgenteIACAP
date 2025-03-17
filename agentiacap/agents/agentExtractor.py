@@ -230,8 +230,10 @@ class ClassifyNode:
             pdf_extension = (".pdf")
             images, pdfs = [], []
             files = state["adjuntos"]
+            attachments_names = []
             for file in files:
                 file_name = file.get("file_name", "").lower()
+                attachments_names.append(file_name)
                 if file_name.endswith(image_extensions):
                     images.append(file)
                 elif file_name.endswith(pdf_extension):
@@ -239,7 +241,7 @@ class ClassifyNode:
             return {
                 "images": images, 
                 "pdfs": pdfs, 
-                "text": f"""{state["asunto"] + " " + state["cuerpo"]}""", 
+                "text": f"""{"asunto: " + state["asunto"] + " cuerpo: " + state["cuerpo"] + " adjuntos: " + "".join(attachments_names)}""", 
                 "tokens":0
             }
         except Exception as e:
@@ -334,7 +336,7 @@ class InvoiceNode:
                 {"role": "system", 
                  "content": TextExtractorPrompt.invoice_id_prompt},
                  {"role": "user",
-                  "content": f"Dado el siguiente texto de un mail extrae el dato pedido: {state['text']}"}
+                  "content": f"Dado el siguiente texto de un mail extrae los datos pedidos: {state['text']}"}
             ]
             result = llm4o.generate(
                 messages=[prompt], 

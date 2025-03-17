@@ -155,7 +155,7 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 Facturas (recordá mencionarlas con su numero completo 9999A99999999)
                                 Montos
                                 De tu consulta pudimos obtener la siguiente información:
-                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas. No mencionar Cod_SAP ni Proveedor ni montos. Listar los campos de forma legible>
+                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas. Listar los campos de forma legible>
                                 {resume}
                                 
                                 En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
@@ -177,7 +177,11 @@ def output_node(state: MailSchema) -> OutputSchema:
         is_missing_data = faltan_datos_requeridos(resume, category)
         message = ""
         if is_missing_data:
-            message = generate_message(state.get("cuerpo"), category, resume)
+            message = generate_message(state.get("cuerpo"), category, 
+                                       {"CUIT": resume["CUIT"], 
+                                        "Sociedad": resume["Sociedad"],
+                                        "Facturas": resume["Facturas"]
+                                        })
 
         result = {
             "category": category,

@@ -6,24 +6,6 @@ FILE_PATH = r"C:\\Users\Adrián\\Enta Consulting\\Optimización del CAP - Genera
 
 async def sentiment(subject: str, message: str):
     prompt = [
-        {"role": "system", "content": "Eres un asistente de análisis de sentimientos."},
-        {"role": "user", 
-         "content": f"""Analiza el siguiente correo electrónico:
-         Asunto: {subject}.
-         Mensaje: {message}.
-         Considerando los siguientes pasos y aspectos:
-         Detección del tono general: Evalúa si el mensaje se expresa de forma respetuosa y profesional, o si se percibe alguna carga emocional negativa (uso de palabras agresivas, tono sarcástico, etc.).
-         Identificación de quejas y reclamos: Detecta si el correo contiene expresiones de insatisfacción, quejas o reclamos específicos.
-         Presta atención a palabras o frases que indiquen descontento, como 'insatisfecho', 'deficiente', 'inaceptable', etc.
-         Detección de reportes reiterados: Verifica si se menciona que la misma situación ha sido reportada en ocasiones previas, lo que puede aumentar la urgencia y la prioridad del caso.
-         Análisis de contexto y urgencia: Considera si, además del contenido negativo, el mensaje transmite urgencia o frustración que requiera una acción prioritaria.
-         Observa si el correo incluye indicios de necesidad de solución inmediata.
-         Consideración de lenguaje formal e informal: Aunque el correo pueda ser formal, identifica si existen matices negativos o sarcasmo que indiquen un sentimiento negativo.
-         Asignación de prioridad: Basándote en este análisis integral, clasifica el sentimiento general del correo en una de las siguientes tres categorías: negativo, neutral o positivo."""
-        }
-    ]
-
-    prompt = [
         {"role": "system", 
          "content": """
             Eres un asistente experto en análisis de impacto de correos electrónicos en un negocio. Se te proporcionará un correo recibido de un cliente, y tu tarea es determinar si su contenido representa un aspecto negativo para el negocio o no.
@@ -57,7 +39,14 @@ async def sentiment(subject: str, message: str):
             "schema": {
                 "type": "object",
                 "properties": {
-                    "final_answer": {"type": "string"}
+                    "final_answer": {
+                        "type": "string",
+                        "enum": [
+                            "neutral",
+                            "positivo",
+                            "negativo"
+                            ]
+                        }
                 },
                 "required": ["final_answer"],
                 "additionalProperties": False
@@ -68,7 +57,7 @@ async def sentiment(subject: str, message: str):
     )
     # return response.choices[0].message.content
     sentiment = json.loads(response.generations[0][0].text.strip())
-    print(sentiment["final_answer"])
+    return sentiment["final_answer"]
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()

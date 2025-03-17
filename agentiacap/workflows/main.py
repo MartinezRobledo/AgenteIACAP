@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def call_cleaner(state: InputSchema) -> MailSchema:
     try:
         cleaned_result = await cleaner.ainvoke(state)
-        return {"asunto":cleaned_result["asunto"], "cuerpo":cleaned_result["cuerpo"], "adjuntos":cleaned_result["adjuntos"]}
+        return {"asunto":cleaned_result["asunto"], "cuerpo":cleaned_result["cuerpo"], "adjuntos":cleaned_result["adjuntos"], "cuerpo_original":state["cuerpo"]}
     except Exception as e:
         logger.error(f"Error en 'call_cleaner': {str(e)}")
         raise
@@ -38,26 +38,32 @@ async def call_classifier(state: MailSchema) -> Command[Literal["Extractor", "Ou
 
 async def call_extractor(state: MailSchema) -> MailSchema:
     try:
-        input_schema = InputSchema(asunto=state["asunto"], cuerpo=state["cuerpo"], adjuntos=state["adjuntos"])
+        input_schema = InputSchema(asunto=state["asunto"], cuerpo=state["cuerpo_original"], adjuntos=state["adjuntos"])
         extracted_result = await extractor.ainvoke(input_schema)
         return {"extracciones": extracted_result["extractions"], "tokens": extracted_result["tokens"]}
     except Exception as e:
         logger.error(f"Error en 'call_extractor': {str(e)}")
-        print(f"Error en 'call_extractor': {str(e)}")
         raise
 
 def output_node(state: MailSchema) -> OutputSchema:
 
     def obtener_valor_por_prioridad(extractions, campo, fuentes_prioritarias):
         for fuente in fuentes_prioritarias:
+            #extractions es una lista con objetos por cada tipo de extraccion
             for extraccion in extractions:
                 if extraccion["source"] == fuente:
-                    for extraccion_data in extraccion["extractions"]:
-                        for archivo, datos in extraccion_data.items():
-                            for item in datos:
-                                valor = item["fields"].get(campo)
-                                if valor and valor.strip() and valor.lower() not in ["none", "", "-"]:  
-                                    return valor.strip()  # Retorna el primer valor válido
+                    #extraccion["extractions"] es una lista de objetos por cada documento procesado
+                    for documents in extraccion["extractions"]:
+                        #document es una lista de objetos por cada pagina extraida
+                        for document in documents:
+                            document_data = documents[document]
+                            for page in document_data:
+                                value = page["fields"].get(campo, None)
+                                if value:
+                                    value = value.strip() 
+                                    if value.lower() not in ["none", "", "-", "null"]:
+                                        return value  # Retorna el primer valor válido
+
         return None  # Si no encuentra nada válido, retorna None
 
     def obtener_facturas(extractions):
@@ -68,67 +74,71 @@ def output_node(state: MailSchema) -> OutputSchema:
         for fuente in fuentes_facturas:
             for extraccion in extractions:
                 if extraccion["source"] == fuente:
-                    for archivo, datos in extraccion["extractions"][0].items():
-                        for item in datos:
-                            invoice_id = item["fields"].get("InvoiceId")
-                            invoice_date = item["fields"].get("InvoiceDate")
-
-                            if invoice_id:
-                                invoice_id = invoice_id.strip()
-                            else:
-                                invoice_id = ""
-
-                            if invoice_date:
-                                invoice_date = invoice_date.strip()
-                            else:
-                                invoice_date = ""
-                            if invoice_id and invoice_id not in ids_vistos:
-                                facturas.append({"ID": invoice_id, "Fecha": invoice_date})
-                                ids_vistos.add(invoice_id)
+                    #extraccion["extractions"] es una lista de objetos por cada documento procesado
+                    for documents in extraccion["extractions"]:
+                        #document es una lista de objetos por cada pagina extraida
+                        for document in documents:
+                            document_data = documents[document]
+                            for page in document_data:
+                                invoice_id = page["fields"].get("InvoiceId", None)
+                                invoice_date = page["fields"].get("InvoiceDate", None)
+                                        
+                                if invoice_id and invoice_id not in ids_vistos:
+                                    facturas.append({"ID": invoice_id, "Fecha": invoice_date})
+                                    ids_vistos.add(invoice_id)
 
         if not facturas:
             for extraccion in extractions:
                 if extraccion["source"] == "Mail":
-                    for archivo, datos in extraccion["extractions"][0].items():
-                        for item in datos:
-                            invoice_ids = item["fields"].get("InvoiceId", [])
-                            if isinstance(invoice_ids, list):
-                                for invoice_id in invoice_ids:
-                                    if invoice_id not in ids_vistos:
-                                        facturas.append({"ID": invoice_id, "Fecha": ""})
-                                        ids_vistos.add(invoice_id)
+                    #extraccion["extractions"] es una lista de objetos por cada documento procesado
+                    for documents in extraccion["extractions"]:
+                        #document es una lista de objetos por cada pagina extraida
+                        for document in documents:
+                            document_data = documents[document]
+                            for page in document_data:
+                                invoice_id = page["fields"].get("InvoiceId", [])
+                                invoice_date = page["fields"].get("InvoiceDate", [])  
+                                # Itero segun la lista con mas elementos
+                                max_length = max(len(invoice_id), len(invoice_date))
+                                for i in range(max_length):
+                                    invoice = invoice_id[i] if i < len(invoice_id) else ""
+                                    fecha = invoice_date[i] if i < len(invoice_date) else ""
+                                    facturas.append({"ID": invoice, "Fecha": fecha})
 
         return facturas
 
     def get_codSap(customer):
         for soc in lista_sociedades:
-            if soc.get("Nombre Soc SAP") == customer:
-                return {"Cod_Sociedad":soc.get("Código SAP"), "Sociedad": customer}
-        return {"Cod_Sociedad": "", "Sociedad":""}
+            if soc.get("Nombre Soc SAP") == customer or soc.get("Nombre en AFIP") == customer:
+                return soc.get("Código SAP", "Cod SAP no encontrado")
+        return "Cod SAP no encontrado"
 
-    def generar_json(datos):
+    def generar_resumen(datos):
         extractions = datos.get("extracciones", [])
         fuentes_prioritarias = ["Mail", "Document Intelligence", "Vision"]
-        aux = get_codSap(obtener_valor_por_prioridad(extractions, "CustomerName", fuentes_prioritarias))
-        cod_soc, soc = aux["Cod_Sociedad"], aux["Sociedad"]
-        json_generado = {
+        customer = obtener_valor_por_prioridad(extractions, "CustomerName", fuentes_prioritarias)
+        cod_soc = obtener_valor_por_prioridad(extractions, "CustomerCodSap", fuentes_prioritarias)
+        resume = {
             "CUIT": obtener_valor_por_prioridad(extractions, "VendorTaxId", fuentes_prioritarias),
             "Proveedor": obtener_valor_por_prioridad(extractions, "VendorName", fuentes_prioritarias),
+            "Sociedad": customer,
             "Cod_Sociedad": cod_soc,
-            "Sociedad": soc,
-            "Factura": obtener_facturas(extractions)
+            "Facturas": obtener_facturas(extractions)
         }
 
-        return json_generado
+        return resume
 
-    def faltan_datos_requeridos(resume):
-        required_fields = ["CUIT", "Cod_Sociedad"]
+    def faltan_datos_requeridos(resume, category):
+        if category not in relevant_categories:
+            return False
+        
+        required_fields = ["CUIT", "Sociedad"]
         
         # Verifica si falta algún campo requerido o está vacío
         falta_campo_requerido = any(not resume.get(field) for field in required_fields)
 
         # Verifica si no hay facturas
-        falta_factura = not resume.get("Factura")
+        falta_factura = not resume.get("Facturas")
 
         return falta_campo_requerido or falta_factura
 
@@ -145,7 +155,7 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 Facturas (recordá mencionarlas con su numero completo 9999A99999999)
                                 Montos
                                 De tu consulta pudimos obtener la siguiente información:
-                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas.>
+                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas. No mencionar Cod_SAP ni Proveedor ni montos. Listar los campos de forma legible>
                                 {resume}
                                 
                                 En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
@@ -155,15 +165,16 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
                                 -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html y no incluyas asunto en la respuesta.
                                 -Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
+                                -No aclares que estas generando un mail de respuesta, solo brinda el mail.
                                  """)
         return response.content
 
     try:
         print("Terminando respuesta...")
-        resume = generar_json(state) 
-        print("Json generado...", resume)
+        resume = generar_resumen(state) 
+        print("Resumen generado...", resume)
         category = state.get("categoria", "Desconocida")
-        is_missing_data = faltan_datos_requeridos(resume)
+        is_missing_data = faltan_datos_requeridos(resume, category)
         message = ""
         if is_missing_data:
             message = generate_message(state.get("cuerpo"), category, resume)

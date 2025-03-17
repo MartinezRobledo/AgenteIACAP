@@ -254,34 +254,14 @@ class TextExtractorPrompt:
     ]
     )
 
-    names_and_cuits_prompt = """Eres un asistente especializado en extraer datos del texto de un email.
+    names_and_cuits_prompt = f"""Eres un asistente especializado en extraer datos del texto de un email.
     **Los datos a extraer son:
     -"VendorName": es el nombre de la empresa que representa la persona que realiza la consulta/reclamo en el mail.
     -"VendorTaxId": se refiere al numero de CUIT de quien realiza la consulta o el reclamo en el mail. No siempre esta presente este numero pero cuando lo está es explícito. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail. Es un numero con la forma dd-dddddddd-d, los caracteres de separacion son opcionales al igual que el ultimo digito.
     -"CustomerName": se refiere a la sociedad por la que se hace la consulta. Solo se pueden incluir las sociedades permitidas en la lista de sociedades. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail.
     -"CustomerTaxId": es el número CUIT de la sociedad por la que se hace la consulta, y se tiene que poder encontrar en la lista de sociedades.
     **Lista de sociedades permitidas:
-    -"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685218190", "Nombre en AFIP": "ASTRA EVANGELISTA SA"
-    -"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."
-    -"Nombre Soc SAP": "UTE LA VENTANA", "Código SAP": "0571", "Estado": "Activa", "CUIT": "30652671418", "Nombre en AFIP": "YACIMIENTO LA VENTANA YPF SA SINOPEC ARGENTINA EXPLORATION AND PRODUCTION INC UNION TRANSITORIA"
-    -"Nombre Soc SAP": "YPF S.A.", "Código SAP": "0620", "Estado": "Activa", "CUIT": "30546689979", "Nombre en AFIP": "YPF SA",
-    -"Nombre Soc SAP": "Fundación YPF", "Código SAP": "0789", "Estado": "Activa", "CUIT": "30691548054", "Nombre en AFIP": "FUNDACION YPF",
-    -"Nombre Soc SAP": "UTE LLANCANELO", "Código SAP": "0797", "Estado": "Activa", "CUIT": "30707293809", "Nombre en AFIP": "CONTRATO DE UNION TRANSITORIA DE EMPRESAS - AREA LLANCANELO U.T.E.",
-    -"Nombre Soc SAP": "OPESSA", "Código SAP": "0680", "Estado": "Activa", "CUIT": "30678774495", "Nombre en AFIP": "OPERADORAS DE ESTACIONES DE SERVICIO SA",
-    -"Nombre Soc SAP": "UTE CAMPAMENTO CENTRAL CAÑADON PERDIDO", "Código SAP": "0862", "Estado": "Activa", "CUIT": "33707856349", "Nombre en AFIP": "YPF S A - SIPETROL ARGENTINA S A - UTE CAMPAMENTO CENTRAL - CAÑADON PERDIDO",
-    -"Nombre Soc SAP": "UTE BANDURRIA", "Código SAP": "0900", "Estado": "Activa", "CUIT": "30708313587", "Nombre en AFIP": "YPF S.A WINTENSHALL ENERGIA SA - PAN AMERICAN ENERGY LLC AREA BANDURRIA UTE",
-    -"Nombre Soc SAP": "Ute Santo Domingo I y II", "Código SAP": "0901", "Estado": "Activa", "CUIT": "30713651504", "Nombre en AFIP": "GAS Y PETROELO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA - YPF S.A. - AREA SANTO DOMINGO I Y II UTE",
-    -"Nombre Soc SAP": "UTE CERRO LAS MINAS", "Código SAP": "0918", "Estado": "Activa", "CUIT": "30712188061", "Nombre en AFIP": "GAS Y PETROLEO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA-YPF S.A.-TOTAL AUSTRAL SA SUC ARG-ROVELLA ENERGIA SA-AREA CERRO LAS MINAS UTE",
-    -"Nombre Soc SAP": "UTE ZAMPAL OESTE", "Código SAP": "1046", "Estado": "Activa", "CUIT": "30709441945", "Nombre en AFIP": "YPF S.A EQUITABLE RESOURCES ARGENTINA COMPANY S.A - ZAMPAL OESTE UTE",
-    -"Nombre Soc SAP": "UTE ENARSA 1", "Código SAP": "1146", "Estado": "Activa", "CUIT": "30710916833", "Nombre en AFIP": "ENERGIA ARGENTINA S.A.- YPF S.A.- PETROBRAS ENERGIA S.A.- PETROURUGUAY S.A. UNION TRANSITORIAS DE EMPRESAS E1",
-    -"Nombre Soc SAP": "UTE GNL ESCOBAR", "Código SAP": "1153", "Estado": "Activa", "CUIT": "30711435227", "Nombre en AFIP": "ENERGIA ARGENTINA S.A. - YPF S.A. - PROYECTO GNL ESCOBAR - UNION TRANSITORIA DE EMPRESAS",
-    -"Nombre Soc SAP": "UTE RINCON DEL MANGRULLO", "Código SAP": "1160", "Estado": "Activa", "CUIT": "30714428469", "Nombre en AFIP": "YPF S.A - PAMPA ENERGIA S.A.. UNION TRANSITORIA DE EMPRESAS - RINCON DEL MANGRULLO",
-    -"Nombre Soc SAP": "UTE CHACHAHUEN", "Código SAP": "1164", "Estado": "Activa", "CUIT": "30716199025", "Nombre en AFIP": "YPF S.A.-KILWER S.A.-KETSAL S.A.-ENERGIA MENDOCINA S.A. AREA CHACHAHUEN UNION TRANSITORIA DE EMPRESAS",
-    -"Nombre Soc SAP": "UTE La amarga chica", "Código SAP": "1167", "Estado": "Activa", "CUIT": "30714869759", "Nombre en AFIP": "YPF S.A. - PETRONAS E&P ARGENTINA S.A.",
-    -"Nombre Soc SAP": "UTE EL OREJANO", "Código SAP": "1169", "Estado": "Activa", "CUIT": "30715142658", "Nombre en AFIP": "YPF S.A.- PBB POLISUR S.A., AREA EL OREJANO UNION TRANSITORIA",
-    -"Nombre Soc SAP": "CIA HIDROCARBURO NO CONVENCIONAL SRL", "Código SAP": "1171", "Estado": "Activa", "CUIT": "30714124427", "Nombre en AFIP": "COMPAÑIA DE HIDROCARBURO NO CONVENCIONAL S.R.L.",
-    -"Nombre Soc SAP": "UTE PAMPA (YSUR)", "Código SAP": "1632", "Estado": "Activa", "CUIT": "30711689067", "Nombre en AFIP": "APACHE ENERGIA ARGENTINA S.R.L. - PETROLERA PAMPA S.A., UNION TRANSITORIA DE EMPRESAS - ESTACION FERNANDEZ ORO Y ANTICLINAL CAMPAMENTO",
-    -"Nombre Soc SAP": "YPF TECNOLOGIA S.A.", "Código SAP": "1600","Estado": "Activa","CUIT":"30713748508","Nombre en AFIP": "YPF TECNOLOGIA S.A."
+        {lista_sociedades}
     **Aclaración sobre lista de sociedades permitidas:**
     - Cada elemento de la lista hace referencia a una unica sociedad.
     - Cada apartado de un elemento sirve para identificar a la misma sociedad. Los apartados estan delimitados por ','.
@@ -292,8 +272,8 @@ class TextExtractorPrompt:
     - Que se mencione "YPF-CAP" o "YPF" no es suficiente para que CustomerName sea YPF S.A. y esto es asi porque YPF S.A. es una sociedad dentro de la empresa YPF.
     - YPF SA puede ser considerado como YPF S.A.
     - Para las razones sociales que no sean YPF se puede ser un poco mas flexible.
-    - No siempre esta presente algun dato de la sociedad en el mail, en caso de no encontrarlo devolve un string vacío.
-    - No siempre esta presente el VendorTaxId, en caso de no encontrarlo devuelve un string vacío.
+    - No siempre esta presente algun dato de la sociedad en el mail, en caso de no encontrarlo devolve un string vacio.
+    - No siempre esta presente el VendorTaxId, en caso de no encontrarlo devuelve un string vacio.
 
      **Salida esperada:**
     - Se espera que devuelvas un json con el formato:
@@ -301,12 +281,11 @@ class TextExtractorPrompt:
         -"CustomerTaxId": "".
         -"VendorTaxId": "".
         -"VendorName": "".
-    En caso de que suceda que "VendorTaxId" sea igual a "CustomerTaxId", eliminar el dato del "VendorTaxId".
     """
 
     invoice_id_prompt = """Eres un asistente especializado en extraer los datos de facturas del texto de un email. 
     Los datos que debes obtener son:
-    "InvoiceId": hace referencia al número de factura por la que se hace la consulta. Algunos ejemplos de como puede llegar a estar mencionada la factura son: documento, comprobante, certificado, FC, FCA, FCE, FEA, FA.
+    "InvoiceId": hace referencia al número de factura por la que se hace la consulta. Algunos ejemplos de como puede llegar a estar mencionada la factura son: documento, comprobante, certificado, FC, FCA, FCE, FEA, FA. El dato se puede encontrar presente tanto en el cuerpo como en el asunto del mail.
     "InvoiceDate": es la fecha de la factura o la fecha de pago mencionada.
     "InvoiceTotal": es el monto asociado a la factura o al pago mencionado.
     **Indicaciones:**
@@ -354,156 +333,3 @@ Si el número de factura no se encuentra explícitamente, pero sigue estas regla
     - El numero de factura no siempre esta presente y si el remitente menciona que el dato esta adjunto muy posiblemente no se encuentre en el texto del mail.
     - Se espera que devuelvas unicamente el valor del numero de factura. En caso de no encontrarlo devolve un string vacío sin dar explicaciones. En caso de encontrar mas de uno devolver un array con los numeros sin repetidos.
     - En los mails se suele mencionar un numero de caso que no se debe confundir con el numero de factura. El numero de caso se lo menciona como YPF-CAP."""
-
-
-# arranger_definition = ChatPromptTemplate.from_messages(
-#     [
-#         (
-#             "system",
-#             """Eres un agente de procesamiento de datos encargado de reordenar y completar información extraída de facturas. Recibirás un objeto JSON con los campos "Categoria" y "Valores".
-#             Trabajarás con el campo "Valores" que es una lista de objetos json con la siguiente estructura:
-#             {{
-#                 "InvoiceId": "",  
-#                 "CustomerName": "",  
-#                 "CustomerTaxId": "",  
-#                 "VendorName": "",  
-#                 "VendorTaxId": "",  
-#                 "PurchaseOrderNumber": "",  
-#                 "InvoiceDate": "",  
-#                 "InvoiceTotal": "",  
-#                 "Signed": ""
-#             }}
-#             **Reglas de procesamiento:**
-
-#             1.¿Cuando permutar InvoiceId con PurchaseOrderNumber?:
-#             -InvoiceId: está compuesto por un punto de venta (4 dígitos, opcional) y un número de comprobante (8 dígitos, obligatorio).
-#                 Puede venir en distintos formatos, incluyendo separadores como "-", letras u otros caracteres.
-#                 Debes extraer ambos valores y devolverlos en el formato estándar: PPPP-NNNNNNNN (si el punto de venta está presente) o solo NNNNNNNN (si no está).
-#                 Ejemplos de entrada y salida:
-#                 "1-35" → "0001-00000035"
-#                 "1A35" → "0001A00000035"
-#                 "35" → "00000035"
-#             -PurchaseOrderNumber: este campo es un número de 10 dígitos que puede comenzar con 2, 36, 10, 11, 12 o 88.
-#             El agente extractor pudo haber dejado el dato de purchase en invoice o viceversa, si detectas que el campo InvoiceId y PurchaseOrderNumber están intercambiados, debes permutarlos.
-            
-#             2.¿Cuando permutar CustomerName con VendorName?:
-#             -Los datos de los campos CustomerName y CustomerTaxId deben poder encontrarse en la lista de sociedades permitidas. Donde "Nombre Soc SAP" es "CustomerName" y "CUIT" es "CustomerTaxId".
-#             Si el dato de CustomerName no se puede encontrar en la lista entonces se trata de un error y tal vez ese dato le corresponda a VendorName. Reasignar o permutar segun corresponda.
-#             Si el dato CustomerTaxId no se puede encontrar en la lista entonces se trata de un error y tal vez ese dato corresponda a VendorTaxId. Reasignar o permutar segun corresponda.
-#             **Lista de sociedades permitidas:
-#                 [{{"Nombre Soc SAP": "AESA", "Código SAP": "0478", "Estado": "Activa", "CUIT": "30685218190", "Nombre en AFIP": "ASTRA EVANGELISTA SA"}}
-#                 {{"Nombre Soc SAP": "YPF GAS", "Código SAP": "0522", "Estado": "Activa", "CUIT": "33555234649", "Nombre en AFIP": "YPF GAS S.A."}}
-#                 {{"Nombre Soc SAP": "UTE LA VENTANA", "Código SAP": "0571", "Estado": "Activa", "CUIT": "30652671418", "Nombre en AFIP": "YACIMIENTO LA VENTANA YPF SA SINOPEC ARGENTINA EXPLORATION AND PRODUCTION INC UNION TRANSITORIA"}}
-#                 {{"Nombre Soc SAP": "YPF S.A.", "Código SAP": "0620", "Estado": "Activa", "CUIT": "30546689979", "Nombre en AFIP": "YPF SA"}},
-#                 {{"Nombre Soc SAP": "Fundación YPF", "Código SAP": "0789", "Estado": "Activa", "CUIT": "30691548054", "Nombre en AFIP": "FUNDACION YPF"}},
-#                 {{"Nombre Soc SAP": "UTE LLANCANELO", "Código SAP": "0797", "Estado": "Activa", "CUIT": "30707293809", "Nombre en AFIP": "CONTRATO DE UNION TRANSITORIA DE EMPRESAS - AREA LLANCANELO U.T.E."}},
-#                 {{"Nombre Soc SAP": "OPESSA", "Código SAP": "0680", "Estado": "Activa", "CUIT": "30678774495", "Nombre en AFIP": "OPERADORAS DE ESTACIONES DE SERVICIO SA"}},
-#                 {{"Nombre Soc SAP": "UTE CAMPAMENTO CENTRAL CAÑADON PERDIDO", "Código SAP": "0862", "Estado": "Activa", "CUIT": "33707856349", "Nombre en AFIP": "YPF S A - SIPETROL ARGENTINA S A - UTE CAMPAMENTO CENTRAL - CAÑADON PERDIDO"}},
-#                 {{"Nombre Soc SAP": "UTE BANDURRIA", "Código SAP": "0900", "Estado": "Activa", "CUIT": "30708313587", "Nombre en AFIP": "YPF S.A WINTENSHALL ENERGIA SA - PAN AMERICAN ENERGY LLC AREA BANDURRIA UTE"}},
-#                 {{"Nombre Soc SAP": "Ute Santo Domingo I y II", "Código SAP": "0901", "Estado": "Activa", "CUIT": "30713651504", "Nombre en AFIP": "GAS Y PETROELO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA - YPF S.A. - AREA SANTO DOMINGO I Y II UTE"}},
-#                 {{"Nombre Soc SAP": "UTE CERRO LAS MINAS", "Código SAP": "0918", "Estado": "Activa", "CUIT": "30712188061", "Nombre en AFIP": "GAS Y PETROLEO DEL NEUQUEN SOCIEDAD ANONIMA CON PARTICIPACION ESTATAL MAYORITARIA-YPF S.A.-TOTAL AUSTRAL SA SUC ARG-ROVELLA ENERGIA SA-AREA CERRO LAS MINAS UTE"}},
-#                 {{"Nombre Soc SAP": "UTE ZAMPAL OESTE", "Código SAP": "1046", "Estado": "Activa", "CUIT": "30709441945", "Nombre en AFIP": "YPF S.A EQUITABLE RESOURCES ARGENTINA COMPANY S.A - ZAMPAL OESTE UTE"}},
-#                 {{"Nombre Soc SAP": "UTE ENARSA 1", "Código SAP": "1146", "Estado": "Activa", "CUIT": "30710916833", "Nombre en AFIP": "ENERGIA ARGENTINA S.A.- YPF S.A.- PETROBRAS ENERGIA S.A.- PETROURUGUAY S.A. UNION TRANSITORIAS DE EMPRESAS E1"}},
-#                 {{"Nombre Soc SAP": "UTE GNL ESCOBAR", "Código SAP": "1153", "Estado": "Activa", "CUIT": "30711435227", "Nombre en AFIP": "ENERGIA ARGENTINA S.A. - YPF S.A. - PROYECTO GNL ESCOBAR - UNION TRANSITORIA DE EMPRESAS"}},
-#                 {{"Nombre Soc SAP": "UTE RINCON DEL MANGRULLO", "Código SAP": "1160", "Estado": "Activa", "CUIT": "30714428469", "Nombre en AFIP": "YPF S.A - PAMPA ENERGIA S.A.. UNION TRANSITORIA DE EMPRESAS - RINCON DEL MANGRULLO"}},
-#                 {{"Nombre Soc SAP": "UTE CHACHAHUEN", "Código SAP": "1164", "Estado": "Activa", "CUIT": "30716199025", "Nombre en AFIP": "YPF S.A.-KILWER S.A.-KETSAL S.A.-ENERGIA MENDOCINA S.A. AREA CHACHAHUEN UNION TRANSITORIA DE EMPRESAS"}},
-#                 {{"Nombre Soc SAP": "UTE La amarga chica", "Código SAP": "1167", "Estado": "Activa", "CUIT": "30714869759", "Nombre en AFIP": "YPF S.A. - PETRONAS E&P ARGENTINA S.A."}},
-#                 {{"Nombre Soc SAP": "UTE EL OREJANO", "Código SAP": "1169", "Estado": "Activa", "CUIT": "30715142658", "Nombre en AFIP": "YPF S.A.- PBB POLISUR S.A., AREA EL OREJANO UNION TRANSITORIA"}},
-#                 {{"Nombre Soc SAP": "CIA HIDROCARBURO NO CONVENCIONAL SRL", "Código SAP": "1171", "Estado": "Activa", "CUIT": "30714124427", "Nombre en AFIP": "COMPAÑIA DE HIDROCARBURO NO CONVENCIONAL S.R.L."}},
-#                 {{"Nombre Soc SAP": "UTE PAMPA (YSUR)", "Código SAP": "1632", "Estado": "Activa", "CUIT": "30711689067", "Nombre en AFIP": "APACHE ENERGIA ARGENTINA S.R.L. - PETROLERA PAMPA S.A., UNION TRANSITORIA DE EMPRESAS - ESTACION FERNANDEZ ORO Y ANTICLINAL CAMPAMENTO"}},
-#                 {{"Nombre Soc SAP": "YPF TECNOLOGIA S.A.", "Código SAP": "1600","Estado": "Activa","CUIT":"30713748508","Nombre en AFIP": "YPF TECNOLOGIA S.A."}}]
-
-#             3.Corrección de Signed:
-#             Si el campo Signed está vacío, debe asignarse False.
-#             Si viene como string, convertirlo a booleano.
-
-#             4.Corrección de InvoiceDate:
-#             - Se espera que el formato de la fecha sea dd-MM-yyyy.
-#             - Si el año es un dato faltante completalo.
-
-#             5.Limpieza de datos:
-#             Si un campo tiene valores como null, "none", "no encontrado", "N/A", debe dejarse vacío ("").
-
-#             Salida esperada:
-#             Devuelve un objeto JSON con la misma estructura de entrada, pero corregido según las reglas anteriores. No incluyas explicaciones ni comentarios, solo devuelve el JSON corregido.
-#             """
-#         ),
-#         MessagesPlaceholder(variable_name="messages"),
-#     ]
-# )
-
-# merger_definition = ChatPromptTemplate.from_messages(
-#     [
-#         (
-#             "system",
-#             """Eres un asistente especializado en eliminar la redundancia y los datos irrelevantes.
-#                 Se te proporcionara el texto de un email y una lista de datos obtenidos de ese texto, tu trabajo es analizar el contexto y hacer la limpieza de los datos obtenidos.
-#                 **Se espera que devuelvas una lista de objetos json que respete este formato:
-#         [
-#             {{
-#                 "Categoría": "",
-#                 "Valores": [
-#                     {{
-#                         "InvoiceId": "",
-#                         "CustomerName": "",
-#                         "CustomerTaxId": "",
-#                         "VendorName": "",
-#                         "VendorTaxId": "",
-#                         "PurchaseOrderNumber": "",
-#                         "InvoiceDate": "",
-#                         "InvoiceTotal": "",
-#                         "Signed":""
-#                     }},
-#                     ...
-#                     {{
-#                         "InvoiceId": "",
-#                         "CustomerName": "",
-#                         "CustomerTaxId": "",
-#                         "VendorName": "",
-#                         "VendorTaxId": "",
-#                         "PurchaseOrderNumber": "",
-#                         "InvoiceDate": "",
-#                         "InvoiceTotal": "",
-#                         "Signed":""
-#                     }}
-#                 ]
-#             }},
-#             ...
-#             {{
-#                 "Categoría": "",
-#                 "Valores": [
-#                     {{
-#                         "InvoiceId": "",
-#                         "CustomerName": "",
-#                         "CustomerTaxId": "",
-#                         "VendorName": "",
-#                         "VendorTaxId": "",
-#                         "PurchaseOrderNumber": "",
-#                         "InvoiceDate": "",
-#                         "InvoiceTotal": "",
-#                         "Signed":""
-#                     }},
-#                     ...
-#                     {{
-#                         "InvoiceId": "",
-#                         "CustomerName": "",
-#                         "CustomerTaxId": "",
-#                         "VendorName": "",
-#                         "VendorTaxId": "",
-#                         "PurchaseOrderNumber": "",
-#                         "InvoiceDate": "",
-#                         "InvoiceTotal": "",
-#                         "Signed":""
-#                     }}
-#                 ]
-#             }}
-#         ]
-#         - Si el campo no tiene dato entonces dejalo vacío.
-#         - No das explicaciones de tus razonamientos.
-#         - Si no recibis data para procesar retornas la estructura base con todos los campos pero vacíos y todos los arrays con un solo elemento.
-#         - Luego de que obtienes el resultado comparas los elementos en el campos "Valores" y eliminas la redundacia.
-#                     """,
-#         ),
-#         MessagesPlaceholder(variable_name="definition"),
-#     ]
-# )

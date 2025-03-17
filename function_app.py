@@ -1,6 +1,4 @@
-import asyncio
 import logging
-import json
 import requests
 import azure.functions as func
 import azure.durable_functions as df
@@ -120,7 +118,7 @@ async def AgenteIACAP_Activity(req: dict) -> dict:
         response = await graph.ainvoke(input=input_data)
     except Exception as e:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
-        return {"error": "Error al procesar la solicitud."}
+        return {"error": f"Error al procesar la solicitud. Error: {e}"}
 
     result = response.get("result", {})
     return result

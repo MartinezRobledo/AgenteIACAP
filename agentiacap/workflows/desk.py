@@ -1,28 +1,17 @@
-import asyncio
+import pandas as pd
+from bs4 import BeautifulSoup
 
-async def funcA():
-    await asyncio.sleep(4)
-    return "Resultado A"
+# Cargar el archivo Excel
+df = pd.read_excel("D:\\Python\\AgentIACAP\\Pruebas -12-03-Resultados2.xlsx")
 
-async def funcB():
-    await asyncio.sleep(2)
-    return "Resultado B"
+# Función para limpiar HTML y extraer texto
+def limpiar_html(texto):
+    if pd.isna(texto):
+        return ""  # Manejar valores nulos
+    return BeautifulSoup(texto, "html.parser").get_text()
 
-async def funcC():
-    await asyncio.sleep(3)
-    return "Resultado C"
+# Aplicar la limpieza a toda la columna
+df["Message"] = df["Message"].apply(limpiar_html)
 
-async def ejecutar():
-    # Lanzamos las funciones en paralelo y esperamos sus resultados
-    resultados = await asyncio.gather(funcA(), funcB(), funcC())
-
-    # Guardamos los resultados en variables
-    resultado1, resultado2, resultado3 = resultados
-    
-    # Imprimimos los resultados
-    print(resultado1)
-    print(resultado2)
-    print(resultado3)
-
-# Ejecutar la función principal
-asyncio.run(ejecutar())
+# Guardar el resultado en un nuevo archivo
+df.to_excel("D:\\Python\\AgentIACAP\\Pruebas -12-03-Resultados2.xlsx", index=False)

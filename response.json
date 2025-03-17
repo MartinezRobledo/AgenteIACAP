@@ -1,0 +1,803 @@
+{
+    "category": "Estado de facturas",
+    "extractions": [
+        {
+            "source": "Document Intelligence",
+            "extractions": [
+                {
+                    "CAP-585713-Z5Y9Z3/32300-OESResumenal28-02-2025.pdf": [
+                        {
+                            "extraction_number": 1,
+                            "fields": {
+                                "VendorName": "KINE\nESTETIC",
+                                "CustomerName": "none",
+                                "CustomerTaxId": "none",
+                                "VendorTaxId": "none",
+                                "CustomerAddress": "none",
+                                "InvoiceId": "none",
+                                "InvoiceDate": "11/03/2025",
+                                "InvoiceTotal": "none",
+                                "PurchaseOrderNumber": "none",
+                                "Signed": "none"
+                            },
+                            "missing_fields": [
+                                "CustomerName",
+                                "CustomerTaxId",
+                                "VendorTaxId",
+                                "CustomerAddress",
+                                "InvoiceId",
+                                "InvoiceTotal",
+                                "PurchaseOrderNumber",
+                                "Signed"
+                            ],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 1,
+                            "fields": {
+                                "VendorName": "KINE\nESTETIC",
+                                "CustomerName": "none",
+                                "CustomerTaxId": "none",
+                                "VendorTaxId": "none",
+                                "CustomerAddress": "none",
+                                "InvoiceId": "none",
+                                "InvoiceDate": "11/03/2025",
+                                "InvoiceTotal": "none",
+                                "PurchaseOrderNumber": "none",
+                                "Signed": "none"
+                            },
+                            "missing_fields": [
+                                "CustomerName",
+                                "CustomerTaxId",
+                                "VendorTaxId",
+                                "CustomerAddress",
+                                "InvoiceId",
+                                "InvoiceTotal",
+                                "PurchaseOrderNumber",
+                                "Signed"
+                            ],
+                            "tokens": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "source": "Vision",
+            "extractions": [
+                {
+                    "CAP-585713-Z5Y9Z3/32300-OESResumenal28-02-2025.pdf": [
+                        {
+                            "extraction_number": 1,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0001-00018278",
+                                "InvoiceDate": "04-09-2024",
+                                "InvoiceTotal": "0.58",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 2,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028681",
+                                "InvoiceDate": "11-09-2024",
+                                "InvoiceTotal": "98,856.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 3,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028765",
+                                "InvoiceDate": "16-09-2024",
+                                "InvoiceTotal": "237,981.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 4,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028794",
+                                "InvoiceDate": "17-09-2024",
+                                "InvoiceTotal": "131,940.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 5,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028817",
+                                "InvoiceDate": "18-09-2024",
+                                "InvoiceTotal": "131,940.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 6,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029421",
+                                "InvoiceDate": "22-10-2024",
+                                "InvoiceTotal": "58,458.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 7,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029525",
+                                "InvoiceDate": "28-10-2024",
+                                "InvoiceTotal": "58,428.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 8,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029590",
+                                "InvoiceDate": "31-10-2024",
+                                "InvoiceTotal": "75,360.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 9,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029774",
+                                "InvoiceDate": "11-11-2024",
+                                "InvoiceTotal": "226,078.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 10,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00030371",
+                                "InvoiceDate": "18-12-2024",
+                                "InvoiceTotal": "153,068.44",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 11,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031024",
+                                "InvoiceDate": "31-01-2025",
+                                "InvoiceTotal": "152,789.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 12,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031047",
+                                "InvoiceDate": "03-02-2025",
+                                "InvoiceTotal": "40,829.01",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 13,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031119",
+                                "InvoiceDate": "06-02-2025",
+                                "InvoiceTotal": "152,789.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 14,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0001-00019871",
+                                "InvoiceDate": "12-02-2025",
+                                "InvoiceTotal": "0.10",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 15,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031260",
+                                "InvoiceDate": "13-02-2025",
+                                "InvoiceTotal": "158,959.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 16,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031425",
+                                "InvoiceDate": "25-02-2025",
+                                "InvoiceTotal": "115,469.04",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 17,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031435",
+                                "InvoiceDate": "26-02-2025",
+                                "InvoiceTotal": "280,601.06",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 18,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031470",
+                                "InvoiceDate": "28-02-2025",
+                                "InvoiceTotal": "115,469.04",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 1,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0001-00018278",
+                                "InvoiceDate": "04-09-2024",
+                                "InvoiceTotal": "0.58",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 2,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028681",
+                                "InvoiceDate": "11-09-2024",
+                                "InvoiceTotal": "98,856.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 3,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028765",
+                                "InvoiceDate": "16-09-2024",
+                                "InvoiceTotal": "237,981.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 4,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028794",
+                                "InvoiceDate": "17-09-2024",
+                                "InvoiceTotal": "131,940.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 5,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00028817",
+                                "InvoiceDate": "18-09-2024",
+                                "InvoiceTotal": "131,940.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 6,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029421",
+                                "InvoiceDate": "22-10-2024",
+                                "InvoiceTotal": "58,458.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 7,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029525",
+                                "InvoiceDate": "28-10-2024",
+                                "InvoiceTotal": "58,428.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 8,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029590",
+                                "InvoiceDate": "31-10-2024",
+                                "InvoiceTotal": "75,360.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 9,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00029774",
+                                "InvoiceDate": "11-11-2024",
+                                "InvoiceTotal": "226,078.00",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 10,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00030371",
+                                "InvoiceDate": "18-12-2024",
+                                "InvoiceTotal": "153,068.44",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 11,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031024",
+                                "InvoiceDate": "31-01-2025",
+                                "InvoiceTotal": "152,789.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 12,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031047",
+                                "InvoiceDate": "03-02-2025",
+                                "InvoiceTotal": "40,829.01",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 13,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031119",
+                                "InvoiceDate": "06-02-2025",
+                                "InvoiceTotal": "152,789.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 14,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0001-00019871",
+                                "InvoiceDate": "12-02-2025",
+                                "InvoiceTotal": "0.10",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 15,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031260",
+                                "InvoiceDate": "13-02-2025",
+                                "InvoiceTotal": "158,959.05",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 16,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031425",
+                                "InvoiceDate": "25-02-2025",
+                                "InvoiceTotal": "115,469.04",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 17,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031435",
+                                "InvoiceDate": "26-02-2025",
+                                "InvoiceTotal": "280,601.06",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        },
+                        {
+                            "extraction_number": 18,
+                            "fields": {
+                                "VendorName": "KINE ESTETIC",
+                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+                                "CustomerTaxId": "30678774495",
+                                "VendorTaxId": null,
+                                "CustomerAddress": null,
+                                "InvoiceId": "0005-00031470",
+                                "InvoiceDate": "28-02-2025",
+                                "InvoiceTotal": "115,469.04",
+                                "PurchaseOrderNumber": null,
+                                "Signed": false
+                            },
+                            "missing_fields": [],
+                            "tokens": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "source": "Mail",
+            "extractions": [
+                {
+                    "Mail": [
+                        {
+                            "extraction_number": null,
+                            "fields": {
+                                "CustomerName": "",
+                                "CustomerTaxId": "",
+                                "InvoiceId": [],
+                                "VendorName": "Kine Estetic SRL",
+                                "VendorTaxId": "",
+                                "InvoiceDate": [
+                                    "28/02/2025"
+                                ],
+                                "InvoiceTotal": []
+                            },
+                            "missing_fields": [
+                                "CustomerAddress",
+                                "PurchaseOrderNumber",
+                                "Signed"
+                            ],
+                            "tokens": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "tokens": 0,
+    "resume": {
+        "CUIT": null,
+        "Proveedor": "Kine Estetic SRL",
+        "Sociedad": "OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA",
+        "Cod_Sociedad": "680",
+        "Facturas": [
+            {
+                "ID": "none",
+                "Fecha": "11/03/2025"
+            },
+            {
+                "ID": "0001-00018278",
+                "Fecha": "04-09-2024"
+            },
+            {
+                "ID": "0005-00028681",
+                "Fecha": "11-09-2024"
+            },
+            {
+                "ID": "0005-00028765",
+                "Fecha": "16-09-2024"
+            },
+            {
+                "ID": "0005-00028794",
+                "Fecha": "17-09-2024"
+            },
+            {
+                "ID": "0005-00028817",
+                "Fecha": "18-09-2024"
+            },
+            {
+                "ID": "0005-00029421",
+                "Fecha": "22-10-2024"
+            },
+            {
+                "ID": "0005-00029525",
+                "Fecha": "28-10-2024"
+            },
+            {
+                "ID": "0005-00029590",
+                "Fecha": "31-10-2024"
+            },
+            {
+                "ID": "0005-00029774",
+                "Fecha": "11-11-2024"
+            },
+            {
+                "ID": "0005-00030371",
+                "Fecha": "18-12-2024"
+            },
+            {
+                "ID": "0005-00031024",
+                "Fecha": "31-01-2025"
+            },
+            {
+                "ID": "0005-00031047",
+                "Fecha": "03-02-2025"
+            },
+            {
+                "ID": "0005-00031119",
+                "Fecha": "06-02-2025"
+            },
+            {
+                "ID": "0001-00019871",
+                "Fecha": "12-02-2025"
+            },
+            {
+                "ID": "0005-00031260",
+                "Fecha": "13-02-2025"
+            },
+            {
+                "ID": "0005-00031425",
+                "Fecha": "25-02-2025"
+            },
+            {
+                "ID": "0005-00031435",
+                "Fecha": "26-02-2025"
+            },
+            {
+                "ID": "0005-00031470",
+                "Fecha": "28-02-2025"
+            }
+        ]
+    },
+    "is_missing_data": true,
+    "message": "```html\nEstimado,\n\nSu caso ha sido catalogado como Estado de facturas. Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:\n\n- CUIT: sin datos\n- Sociedad de YPF a la que se facturó: OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA\n- Facturas: \n  - 9999A99999999\n  - 0001-00018278\n  - 0005-00028681\n  - 0005-00028765\n  - 0005-00028794\n  - 0005-00028817\n  - 0005-00029421\n  - 0005-00029525\n  - 0005-00029590\n  - 0005-00029774\n  - 0005-00030371\n  - 0005-00031024\n  - 0005-00031047\n  - 0005-00031119\n  - 0001-00019871\n  - 0005-00031260\n  - 0005-00031425\n  - 0005-00031435\n  - 0005-00031470\n- Montos: sin datos\n\nDe tu consulta pudimos obtener la siguiente información:\n\n- CUIT: sin datos\n- Proveedor: Kine Estetic SRL\n- Sociedad: OPERADORA DE ESTACIONES DE SERVICIO SOCIEDAD ANONIMA\n- Facturas: \n  - 9999A99999999\n  - 0001-00018278\n  - 0005-00028681\n  - 0005-00028765\n  - 0005-00028794\n  - 0005-00028817\n  - 0005-00029421\n  - 0005-00029525\n  - 0005-00029590\n  - 0005-00029774\n  - 0005-00030371\n  - 0005-00031024\n  - 0005-00031047\n  - 0005-00031119\n  - 0001-00019871\n  - 0005-00031260\n  - 0005-00031425\n  - 0005-00031435\n  - 0005-00031470\n\nEn caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.\n\nSaludos,\n\nCAP - Centro de Atención a Proveedores YPF\n```"
+}

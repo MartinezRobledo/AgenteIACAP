@@ -26,6 +26,7 @@ dependencies = [
     "azure-storage-blob (>=12.24.1,<13.0.0)",
     "fastapi (>=0.115.8,<0.116.0)",
     "azure-functions-durable (>=1.2.10,<2.0.0)",
+    "langchain-community (>=0.3.19,<0.4.0)",
 ]
 
 

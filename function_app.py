@@ -12,7 +12,7 @@ from urllib.parse import quote
 
 from agentiacap.utils.globals import InputSchema
 from agentiacap.workflows.main import graph
-from agentiacap.workflows.extract_Sap_Esker import ExtractSAP, ExtractEsker
+from agentiacap.workflows.op_data_extractor import ExtractSAP, ExtractEsker
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
@@ -77,17 +77,31 @@ async def AgenteIACAP(req: func.HttpRequest, client) -> func.HttpResponse:
 def AgenteIACAP_Orchestrator(context: df.DurableOrchestrationContext):
     input_data = context.get_input()
     result = yield context.call_activity("AgenteIACAP_Activity", input_data)
-    # result = yield context.call_activity("ExtractionSapEsker", input_data)
     return result
 
+@app.orchestration_trigger(context_name="context")
+def Extraction_Orchestrator(context: df.DurableOrchestrationContext):
+    input_data = context.get_input()
+    # Obtener el nombre de la actividad desde el input o parámetros
+    activity_name = input_data.get("system")
+    
+    # Diccionario con las actividades disponibles
+    activities = {
+        "sap": ExtractionSap,
+        "esker": ExtractionEsker,
+    }
+    
+    if activity_name.lower() not in activities:
+        raise ValueError(f"Actividad '{activity_name}' no encontrada.")
+    
+    # Llamar a la actividad correspondiente
+    result = yield context.call_activity(activities[activity_name.lower()], input_data)
+    return result
 
 # Activity: realiza el procesamiento (por ejemplo, invoca graph.ainvoke)
 @app.activity_trigger(input_name="req")
 async def AgenteIACAP_Activity(req: dict) -> dict:
     logging.info("Python HTTP trigger function processed a request.")
-
-    # loop = asyncio.get_running_loop()
-    # loop.set_task_factory(None)
 
     try:
         asunto = req["asunto"]

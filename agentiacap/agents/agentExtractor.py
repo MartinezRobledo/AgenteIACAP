@@ -179,49 +179,7 @@ class Fields(TypedDict):
     InvoiceTotal:list
 
 
-def fix_data(fields:Fields):
-    prompt = [
-        {"role": "system", 
-        "content": """
-            Eres un asistente que corrige datos que pueden estar mal ubicados, mal formateados o mal completados dentro de un diccionario de python.
 
-            **Nombres de empresas/Nombres de proveedores:**
-            - No siempre viene especificada la sociedad o el proveedor.
-            - Algunas veces los nombres estén intercambiados, es decir, el valor en VendorName es el de CustomerName y el de CustomerName es el de VendorName. Para saber si esto esta ocurriendo deberás hacer uso de la lista de sociedades. Cualquiera de los dos datos que puedas encontrar en la lista de sociedades deberas asignarlo a CustomerName, y el otro por ende será VendorName.
-            - El campo CustomerCodSap hace referencia al código de la sociedad y siempre estará vacío en los datos de entrada. Si se tiene información adicional sobre cuál es la sociedad, completa este campo con el dato correspondiente a esa sociedad.
-            - Lista de sociedades:
-                {lista_sociedades}
-
-            **Reglas generales para correcciones:**
-            - Si NO hay ninguna sociedad en los datos de entrada, no se debe completar esa información.
-            - Solo realiza correcciones donde los datos estén mal ubicados, mal formateados o incompletos en un campo específico.
-            - Si un campo está vacío, no lo completes automáticamente con información inventada, solo corrige los datos incorrectos que ya estén presentes.
-            - Si un dato no se puede corregir debido a la falta de información, déjalo tal como está, sin suponer ni agregar nuevos datos.
-
-            **Salida esperada:**
-            - Vas a verificar que en tus datos de salida no tengas ningun dato que no exista en los datos de entrada, si esto sucede quiere decir que hay un dato inventado o que forzaste y eso no puede ocurrir.
-            - La salida debe respetar el mismo formato con el que se ingresaron los datos.
-            - Los campos vacíos no deben ser completados con datos inventados.
-            - Los datos podrían estar perfectamente correctos, y en ese caso no es necesario realizar ninguna corrección.
-        """},
-
-        {"role": "user", 
-        "content": f"""Analiza y, en caso de ser necesario, corrige los datos del siguiente diccionario de Python:
-        {fields}.
-        """
-        }
-    ]
-
-
-    response = llm4o.generate(
-        messages=[prompt], 
-        response_format={
-        "type": "json_schema",
-        "json_schema": json_schema
-    }
-    )
-    response = json.loads(response.generations[0][0].text.strip())
-    return response["final_answer"]
 
 def asignar_codigo_sap(datos_facturas, empresas):
     """

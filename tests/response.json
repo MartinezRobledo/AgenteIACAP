@@ -1,102 +1,6 @@
 {
-    "category": "Estado de facturas",
+    "category": "Pedido devolución retenciones",
     "extractions": [
-        {
-            "source": "Document Intelligence",
-            "extractions": [
-                {
-                    "CAP-585323-F3H8Y4/20330729148-0000100002922(1).pdf": [
-                        {
-                            "extraction_number": 1,
-                            "fields": {
-                                "VendorName": "ZUIANI MANUEL EZEQUIEL",
-                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIOS SA",
-                                "CustomerTaxId": "30678774495",
-                                "CustomerCodSap": "none",
-                                "VendorTaxId": "20330729148",
-                                "CustomerAddress": "Guemes, Macacha,Boulevard 515 - Capital Federal, Ciudad de\nBuenos Aires",
-                                "InvoiceId": "00002922",
-                                "InvoiceDate": "07/02/2025",
-                                "InvoiceTotal": "$\n28458486,64",
-                                "PurchaseOrderNumber": "none",
-                                "Signed": "none"
-                            },
-                            "missing_fields": [
-                                "CustomerCodSap",
-                                "PurchaseOrderNumber",
-                                "Signed"
-                            ],
-                            "tokens": 0
-                        },
-                        {
-                            "extraction_number": 1,
-                            "fields": {
-                                "VendorName": "ZUIANI MANUEL EZEQUIEL",
-                                "CustomerName": "OPERADORA DE ESTACIONES DE SERVICIOS SA",
-                                "CustomerTaxId": "30678774495",
-                                "CustomerCodSap": "none",
-                                "VendorTaxId": "20330729148",
-                                "CustomerAddress": "Guemes, Macacha,Boulevard 515 - Capital Federal, Ciudad de\nBuenos Aires",
-                                "InvoiceId": "00002922",
-                                "InvoiceDate": "07/02/2025",
-                                "InvoiceTotal": "$\n28458486,64",
-                                "PurchaseOrderNumber": "none",
-                                "Signed": "none"
-                            },
-                            "missing_fields": [
-                                "CustomerCodSap",
-                                "PurchaseOrderNumber",
-                                "Signed"
-                            ],
-                            "tokens": 0
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "source": "Vision",
-            "extractions": [
-                {
-                    "CAP-585323-F3H8Y4/20330729148-0000100002922(1).pdf": [
-                        {
-                            "extraction_number": 1,
-                            "fields": {
-                                "VendorName": "ANUEL EZEQUIEL",
-                                "CustomerName": "",
-                                "CustomerTaxId": "",
-                                "VendorTaxId": "2030372914",
-                                "CustomerAddress": "",
-                                "InvoiceId": "0001-00000914",
-                                "InvoiceDate": "06-02-2025",
-                                "InvoiceTotal": "1135.40",
-                                "PurchaseOrderNumber": "2000002154",
-                                "Signed": false
-                            },
-                            "missing_fields": [],
-                            "tokens": 0
-                        },
-                        {
-                            "extraction_number": 1,
-                            "fields": {
-                                "VendorName": "ANUEL EZEQUIEL",
-                                "CustomerName": "",
-                                "CustomerTaxId": "",
-                                "VendorTaxId": "2030372914",
-                                "CustomerAddress": "",
-                                "InvoiceId": "0001-00000914",
-                                "InvoiceDate": "06-02-2025",
-                                "InvoiceTotal": "1135.40",
-                                "PurchaseOrderNumber": "2000002154",
-                                "Signed": false
-                            },
-                            "missing_fields": [],
-                            "tokens": 0
-                        }
-                    ]
-                }
-            ]
-        },
         {
             "source": "Mail",
             "extractions": [
@@ -108,12 +12,13 @@
                                 "CustomerName": "",
                                 "CustomerTaxId": "",
                                 "InvoiceId": null,
-                                "VendorName": "Zuiani Manuel Ezequiel",
-                                "VendorTaxId": "20330729148",
+                                "VendorName": "TÉCNICA DE FLUIDOS SRL",
+                                "VendorTaxId": "30707450092",
                                 "PurchaseOrderNumber": null,
                                 "InvoiceDate": [
-                                    "diciembre-24",
-                                    "enero-25"
+                                    "28/02/2025",
+                                    "01/03/2025",
+                                    "31/05/2025"
                                 ],
                                 "InvoiceTotal": null
                             },
@@ -131,21 +36,25 @@
     ],
     "tokens": 0,
     "resume": {
-        "CUIT": "20330729148",
-        "Proveedor": "Zuiani Manuel Ezequiel",
-        "Sociedad": "OPERADORA DE ESTACIONES DE SERVICIOS SA",
+        "CUIT": "30707450092",
+        "Proveedor": "TÉCNICA DE FLUIDOS SRL",
+        "Sociedad": null,
         "Cod_Sociedad": null,
         "Facturas": [
             {
-                "ID": "00002922",
-                "Fecha": "07/02/2025"
+                "ID": "",
+                "Fecha": "28/02/2025"
             },
             {
-                "ID": "0001-00000914",
-                "Fecha": "06-02-2025"
+                "ID": "",
+                "Fecha": "01/03/2025"
+            },
+            {
+                "ID": "",
+                "Fecha": "31/05/2025"
             }
         ]
     },
-    "is_missing_data": false,
-    "message": ""
+    "is_missing_data": true,
+    "message": "```html\n<p>Estimado,</p>\n\n<p>Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:</p>\n\n<ul>\n    <li>CUIT</li>\n    <li>Sociedad de YPF a la que se facturó</li>\n    <li>Facturas (recordá mencionarlas con su número completo 9999A99999999)</li>\n    <li>Montos</li>\n</ul>\n\n<p>De tu consulta pudimos obtener la siguiente información:</p>\n\n<ul>\n    <li><strong>CUIT:</strong> 30707450092</li>\n    <li><strong>Sociedad:</strong> sin datos</li>\n    <li><strong>Facturas:</strong>\n        <ul>\n            <li>ID: sin datos, Fecha: 28/02/2025</li>\n            <li>ID: sin datos, Fecha: 01/03/2025</li>\n            <li>ID: sin datos, Fecha: 31/05/2025</li>\n        </ul>\n    </li>\n</ul>\n\n<p>En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.</p>\n\n<p>Saludos,</p>\n<p>CAP - Centro de Atención a Proveedores YPF</p>\n```"
 }

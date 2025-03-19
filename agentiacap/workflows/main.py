@@ -99,6 +99,8 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 invoice_id = page["fields"].get("InvoiceId", [])
                                 invoice_date = page["fields"].get("InvoiceDate", [])  
                                 # Itero segun la lista con mas elementos
+                                if not invoice_id: invoice_id = []
+                                if not invoice_date: invoice_date = []
                                 max_length = max(len(invoice_id), len(invoice_date))
                                 for i in range(max_length):
                                     invoice = invoice_id[i] if i < len(invoice_id) else ""
@@ -106,12 +108,6 @@ def output_node(state: MailSchema) -> OutputSchema:
                                     facturas.append({"ID": invoice, "Fecha": fecha})
 
         return facturas
-
-    def get_codSap(customer):
-        for soc in lista_sociedades:
-            if soc.get("Nombre Soc SAP") == customer or soc.get("Nombre en AFIP") == customer:
-                return soc.get("Código SAP", "Cod SAP no encontrado")
-        return "Cod SAP no encontrado"
 
     def generar_resumen(datos):
         extractions = datos.get("extracciones", [])
@@ -128,9 +124,7 @@ def output_node(state: MailSchema) -> OutputSchema:
 
         return resume
 
-    def faltan_datos_requeridos(resume, category):
-        if category not in relevant_categories:
-            return False
+    def faltan_datos_requeridos(resume):
         
         required_fields = ["CUIT", "Sociedad"]
         
@@ -142,14 +136,14 @@ def output_node(state: MailSchema) -> OutputSchema:
 
         return falta_campo_requerido or falta_factura
 
-    def generate_message(cuerpo, category, resume):
+    def generate_message(cuerpo, resume):
         response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
                                 En base a este mail de entrada: {cuerpo}. 
                                 Redactá un mail con la siguiente estructura:
  
                                 Estimado, 
                                 
-                                Su caso ha sido catalogado como {category}. Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
+                                Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
                                 CUIT
                                 Sociedad de YPF a la que se facturó
                                 Facturas (recordá mencionarlas con su numero completo 9999A99999999)
@@ -163,7 +157,7 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 Instrucciones de salida:
                                 -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
                                 -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
-                                -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html y no incluyas asunto en la respuesta.
+                                -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html para que se pueda estructurar en Outlook y no incluyas asunto en la respuesta.
                                 -Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
                                 -No aclares que estas generando un mail de respuesta, solo brinda el mail.
                                  """)
@@ -171,13 +165,25 @@ def output_node(state: MailSchema) -> OutputSchema:
 
     try:
         print("Terminando respuesta...")
+        category = state.get("categoria", "Desconocida")
+
+        if category not in relevant_categories:
+            result = {
+                "category": category,
+                "extractions": [],
+                "tokens": 0,
+                "resume": {},
+                "is_missing_data": False,
+                "message": ""
+            }
+            return {"result": result}
+        
         resume = generar_resumen(state) 
         print("Resumen generado...", resume)
-        category = state.get("categoria", "Desconocida")
-        is_missing_data = faltan_datos_requeridos(resume, category)
+        is_missing_data = faltan_datos_requeridos(resume)
         message = ""
         if is_missing_data:
-            message = generate_message(state.get("cuerpo"), category, 
+            message = generate_message(state.get("cuerpo"),
                                        {"CUIT": resume["CUIT"], 
                                         "Sociedad": resume["Sociedad"],
                                         "Facturas": resume["Facturas"]

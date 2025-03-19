@@ -356,6 +356,8 @@ class ImageFieldExtractor:
                     - Un documento puede tener mas de un InvoiceId.
                     - El InvoiceId es un número de de 8 digitos que suele tener delante un número de 4 digitos separado por un "-" o una letra mayúscula.
                     - CustomerCodSap no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
+
+                    - NO INVENTES NINGUN DATO. SI EXSISTE ALGUN DATO QUE NO ENCUENTRES EN LA IMAGEN BRINDADA, NO LO OTORGUES EN LA RESPUESTA SI TE VES FORZADO A COMPLETAR CON UN VALOR USA EL VALOR NULL POR DEFECTO.
                     """
             }
         ]

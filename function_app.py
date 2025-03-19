@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 from urllib.parse import quote
 
 from agentiacap.utils.globals import InputSchema
+from agentiacap.workflows.responser import responder_mail
 from agentiacap.workflows.main import graph
-from agentiacap.workflows.op_data_extractor import ExtractSAP, ExtractEsker
+from agentiacap.tools.op_data_extractor import ExtractSAP, ExtractEsker
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
@@ -82,9 +83,8 @@ def AgenteIACAP_Orchestrator(context: df.DurableOrchestrationContext):
 @app.orchestration_trigger(context_name="context")
 def Extraction_Orchestrator(context: df.DurableOrchestrationContext):
     input_data = context.get_input()
-    # Obtener el nombre de la actividad desde el input o parámetros
+    # Obtener el nombre de la actividad desde el input
     activity_name = input_data.get("system")
-    
     # Diccionario con las actividades disponibles
     activities = {
         "sap": ExtractionSap,
@@ -96,6 +96,14 @@ def Extraction_Orchestrator(context: df.DurableOrchestrationContext):
     
     # Llamar a la actividad correspondiente
     result = yield context.call_activity(activities[activity_name.lower()], input_data)
+    return result
+
+@app.orchestration_trigger(context_name="context")
+def Responser_Orchestrator(context: df.DurableOrchestrationContext):
+    input_data = context.get_input()
+    
+    # Llamar a la actividad
+    result = yield context.call_activity(Responser, input_data)
     return result
 
 # Activity: realiza el procesamiento (por ejemplo, invoca graph.ainvoke)
@@ -172,7 +180,7 @@ async def ExtractionSap(req: dict) -> dict:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
         return {"error": f"Error al procesar la solicitud. Error: {e}"}
 
-    return response.get("aggregate", {})
+    return response.get("extractions", {})
 
 @app.activity_trigger(input_name="req")
 async def ExtractionEsker(req: dict) -> dict:
@@ -209,3 +217,21 @@ async def ExtractionEsker(req: dict) -> dict:
         return {"error": f"Error al procesar la solicitud. Error: {e}"}
 
     return response.get("aggregate", {})
+
+@app.activity_trigger(input_name="req")
+def Responser(req: dict) -> dict:
+    logging.info("Python activity function processed a request.")
+
+    try:
+        inputs = req["inputs"]
+
+    except Exception as e:
+        return {"error": f"Body no válido. Error: {e}"}
+
+    try:
+        response = responder_mail(inputs)
+    except Exception as e:
+        logging.error(f"Error al invocar responser: {e}")
+        return {"error": f"Error al procesar la solicitud. Error: {e}"}
+
+    return response

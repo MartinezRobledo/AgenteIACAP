@@ -31,7 +31,6 @@ def evaluar_contexto(categoria: str, email_entrada: str) -> MessagesState:
     
     return {"messages": [respuesta]}
 
-
 # Functions
 def obtener_casos(categoria, n=5):
     """

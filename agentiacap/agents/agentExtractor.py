@@ -223,6 +223,31 @@ def fix_data(fields:Fields):
     response = json.loads(response.generations[0][0].text.strip())
     return response["final_answer"]
 
+def asignar_codigo_sap(datos_facturas, empresas):
+    """
+    Agrega el 'Código SAP' a cada factura si encuentra coincidencia en 'CustomerName' o 'CustomerTaxId'.
+    
+    :param datos_facturas: Lista de diccionarios con datos de facturas.
+    :param empresas: Lista de diccionarios con datos de empresas.
+    :return: Lista de facturas con 'Código SAP' agregado si aplica.
+    """
+    for factura in datos_facturas:
+        customer_name = factura.get("CustomerName", "").strip().lower()
+        customer_tax_id = factura.get("CustomerTaxId", "").strip()
+        
+        for empresa in empresas:
+            empresa_name = empresa.get("CustomerName", "").strip().lower()
+            empresa_tax_id = empresa.get("CustomerTaxId", "").strip()
+            
+            if customer_tax_id and customer_tax_id == empresa_tax_id:
+                factura["Código SAP"] = empresa["Código SAP"]
+                break
+            elif customer_name and customer_name == empresa_name:
+                factura["Código SAP"] = empresa["Código SAP"]
+                break
+    
+    return datos_facturas
+
 class ClassifyNode:
     def __call__(self, state:InputSchema) -> State:
         try:
@@ -298,6 +323,7 @@ class PrebuiltNode:
         print(f"DEBUG-Prebuilt")
         try:
             result = process_binary_files(binary_files=state["pdfs"], fields_to_extract=fields_to_extract)
+            result = asignar_codigo_sap(result, lista_sociedades)
             print(f"DEBUG-Resultado Prebuilt: \n{result}")
             return {"tokens": 0, "aggregate": result}
         except Exception as e:

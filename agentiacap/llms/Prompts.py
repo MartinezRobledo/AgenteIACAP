@@ -260,6 +260,7 @@ class TextExtractorPrompt:
     -"VendorTaxId": se refiere al numero de CUIT de quien realiza la consulta o el reclamo en el mail. No siempre esta presente este numero pero cuando lo está es explícito. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail. Es un numero con la forma dd-dddddddd-d, los caracteres de separacion son opcionales al igual que el ultimo digito.
     -"CustomerName": se refiere a la sociedad por la que se hace la consulta. Solo se pueden incluir las sociedades permitidas en la lista de sociedades. Este dato se puede encontrar en el Asunto o en el Cuerpo del mail.
     -"CustomerTaxId": es el número CUIT de la sociedad por la que se hace la consulta, y se tiene que poder encontrar en la lista de sociedades.
+    -"CustomerCodSap": no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
     **Lista de sociedades permitidas:
         {lista_sociedades}
     **Aclaración sobre lista de sociedades permitidas:**

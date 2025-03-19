@@ -20,12 +20,12 @@ async def ExtractSAP(files: list, inputs: list):
             **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
             **Flujo principal (obligatorio):
                 - Busca en la columna "Referencia" el numero de factura: {invoice}. Si no encontras la factura intenta el flujo alternativo.
-                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp.", obtene 'due_date' de la columna "Vence El" y obtené "date_comp" de la columna "Compens.". Si no encontras el numero retorna en este punto.
                 - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
                 - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
             **Flujo alternativo (Opcional):
                 - Busca en la columna "Fecha doc." la fecha: {date}. Si no encontras la fecha retorna.
-                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp.", obtené 'due_date' de la columna "Vence El" y obtené "comp_date" de la columna "Compens.". Si no encontras el numero retorna en este punto.
                 - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
                 - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
             **Retorno:
@@ -34,7 +34,7 @@ async def ExtractSAP(files: list, inputs: list):
                 - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
                 - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
             result += find_in_binary_files_layout(binary_files=files, fields_to_extract=fields_to_extract_sap, mothod_prompt=user_text_prompt)
-        return {"aggregate": result}
+        return {"extractions": result}
     except Exception as e:
         logger.error(f"Error en 'ExtractSAP': {str(e)}")
         raise

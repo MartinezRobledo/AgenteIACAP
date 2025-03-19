@@ -17,14 +17,6 @@ from pydantic import BaseModel, Field
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
 class SapReg(BaseModel):
-    """
-    A class representing an address in an invoice.
-
-    Attributes:
-        invoice: Invoice number
-        date: Invoice date
-        amount: total amount
-    """
 
     invoice: Optional[str] = Field(
         description='Dato ubicado en la columna "Referencia" y cumple con ser un numero con el formato ddddAdddddddd'
@@ -41,27 +33,18 @@ class SapReg(BaseModel):
     op_date: Optional[str] = Field(
         description='Dato ubicado en la columna "Fecha doc." y representa la fecha de purchase_number'
     )
+    comp_doc: Optional[str] = Field(
+        description='Dato ubicado en la columna "Doc. comp." y representa la fecha de purchase_number'
+    )
+    comp_date: Optional[str] = Field(
+        description='Dato ubicado en la columna "Compens." y representa la fecha de purchase_number'
+    )
     found: Optional[bool] = Field(
         description='Indica si se encontró el purchase_number. Por defecto es False'
     )
     overdue: Optional[bool] = Field(
         description='Indica si True si la fecha actual es mayor a la fecha de due_date. Por defecto es False'
     )
-
-    @staticmethod
-    def example():
-        """
-        Creates an empty example InvoiceAddress object.
-
-        Returns:
-            InvoiceAddress: An empty InvoiceAddress object.
-        """
-
-        return SapReg(
-            invoice='',
-            date='',
-            amount='',
-        )
 
 class SapTable(BaseModel):
     """
@@ -372,6 +355,7 @@ class ImageFieldExtractor:
                     **Aclaraciones generales:**
                     - Un documento puede tener mas de un InvoiceId.
                     - El InvoiceId es un número de de 8 digitos que suele tener delante un número de 4 digitos separado por un "-" o una letra mayúscula.
+                    - CustomerCodSap no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
                     """
             }
         ]
@@ -465,6 +449,7 @@ class ImageFieldExtractor:
                                                     "VendorName": {"type": ["string", "null"]},
                                                     "CustomerName": {"type": ["string", "null"]},
                                                     "CustomerTaxId": {"type": ["string", "null"]},
+                                                    "CustomerCodSap": {"type": ["string", "null"]},
                                                     "VendorTaxId": {"type": ["string", "null"]},
                                                     "CustomerAddress": {"type": ["string", "null"]},
                                                     "InvoiceId": {"type": ["string", "null"]},
@@ -474,7 +459,7 @@ class ImageFieldExtractor:
                                                     "Signed": {"type": "boolean"}
                                                 },
                                                 "required": [
-                                                    "VendorName", "CustomerName", "CustomerTaxId", 
+                                                    "VendorName", "CustomerName", "CustomerTaxId", "CustomerCodSap",
                                                     "VendorTaxId", "CustomerAddress", "InvoiceId", 
                                                     "InvoiceDate", "InvoiceTotal", "PurchaseOrderNumber", "Signed"
                                                 ],

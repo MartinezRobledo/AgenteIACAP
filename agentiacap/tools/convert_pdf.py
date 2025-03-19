@@ -16,7 +16,7 @@ def render_pdf_page_as_image(pdf_path: str, page_number: int):
         
         return img_buffer
     except Exception as e:
-        print(f"❌ Error al renderizar la página {page_number} con PyMuPDF: {e}")
+        print(f"Error al renderizar la página {page_number} con PyMuPDF: {e}")
         return None
 
 def pdf_base64_to_image_base64(pdf_base64: str, fin: int):
@@ -37,7 +37,7 @@ def pdf_base64_to_image_base64(pdf_base64: str, fin: int):
             conversiones.append(base64_string)
 
     except Exception as e:
-        print(f"❌ Error al convertir PDF a imágenes base64: {e}")
+        print(f"Error al convertir PDF a imágenes base64: {e}")
 
     return conversiones
 
@@ -61,7 +61,7 @@ def pdf_binary_to_images_base64(pdf_binary: bytes, dpi: int = 300):
 
             # Verificación de imagen
             if not base64_image or len(base64_image) < 50:  # Umbral arbitrario
-                print(f"❌ Error: Imagen Base64 inválida en la página {page_number + 1}")
+                print(f"Error: Imagen Base64 inválida en la página {page_number + 1}")
                 continue
 
             conversiones.append({
@@ -70,7 +70,7 @@ def pdf_binary_to_images_base64(pdf_binary: bytes, dpi: int = 300):
             })
 
     except Exception as e:
-        print(f"❌ Error al convertir PDF a imágenes: {e}")
+        print(f"Error al convertir PDF a imágenes: {e}")
         raise e
 
     return conversiones

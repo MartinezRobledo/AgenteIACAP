@@ -1,10 +1,12 @@
 import base64
+import io
 import logging
 import os
 import json
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+import fitz
 from openai import AzureOpenAI
 from typing import List
 from dotenv import load_dotenv
@@ -14,6 +16,7 @@ from azure.ai.documentintelligence.models import AnalyzeResult, DocumentContentF
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 from typing import Optional
 from pydantic import BaseModel, Field
+import pandas as pd
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
 class SapReg(BaseModel):
@@ -122,88 +125,51 @@ def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extra
     
     return data
 
-def analyze_document_layout(client, file_bytes: bytes, fields_to_extract: list, user_prompt: str) -> list:
-    data = []
-    try:
-        poller = client.begin_analyze_document(
-            model_id="prebuilt-layout", 
-            body=file_bytes,
-            output_content_format=DocumentContentFormat.MARKDOWN,
-            content_type="application/pdf"
-        )
-        result: AnalyzeResult = poller.result()
-        documents = result.content
 
-        system_prompt = f"""You are an AI assistant that extracts data from documents."""
-        user_content = []
+def extract_table_layout(file_bytes: bytes, header_ref: str = None) -> list:
+    client = initialize_client()
+    poller = client.begin_analyze_document(
+        model_id="prebuilt-layout", 
+        body=file_bytes,
+        output_content_format=DocumentContentFormat.MARKDOWN,
+        content_type="application/pdf"
+    )
 
-        user_content.append({
-            "type": "text",
-            "text": user_prompt
-        })
+    result: AnalyzeResult = poller.result()
+    tables = []
 
-        user_content.append({
-            "type": "text",
-            "text": documents
-        })
+    for table_idx, table in enumerate(result.tables):
+        print(f"Table # {table_idx} has {table.row_count} rows and {table.column_count} columns")
+
+        table_data = []
+
+        for row_idx in range(table.row_count):
+            row_data = []
+            for col_idx in range(table.column_count):
+                cell = next((cell for cell in table.cells if cell.row_index == row_idx and cell.column_index == col_idx), None)
+                row_data.append(cell.content if cell else None)
+            table_data.append(row_data)
+
+        df = pd.DataFrame(table_data)
+
+        # Si se proporciona header_ref, buscar la fila con el encabezado
+        if header_ref:
+            header_index = None
+            for i, row in df.iterrows():
+                if header_ref in row.values:
+                    header_index = i
+                    break
+
+            if header_index is None:
+                raise ValueError(f"D.I. Layout: No se encontró la referencia '{header_ref}' en la tabla {table_idx}.")
+
+            df.columns = df.iloc[header_index]  # Usar esa fila como encabezado
+            df = df[header_index + 1:].reset_index(drop=True)  # Tomar solo las filas siguientes
+
+        tables.append(df)
+
+    return tables
         
-        openai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # Usamos la API key para autenticación
-            api_version="2024-12-01-preview" # Requires the latest API version for structured outputs.
-        )
-        
-        completion = openai_client.beta.chat.completions.parse(
-            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_content
-                }
-            ],
-            response_format=SapTable,
-            max_tokens=10000,
-            temperature=0.1,
-            top_p=0.1,
-            logprobs=True # Enabled to determine the confidence of the response.
-        )
-        extractions = completion.choices[0].message.content
-        extractions = json.loads(extractions)
-        print("DEBUG-extractions: ", extractions)
-        extractions = extractions["invoices"]
-        if extractions:
-            for idx, element in enumerate(extractions):
-                missing_fields = []
-                data.append({
-                    "extraction_number": idx + 1,
-                    "fields": element,
-                    "missing_fields": missing_fields,
-                    "error": "",
-                    "source": "Document Intelligence - Layout"
-                })
-        else:
-            data = [{
-                    "extraction_number": 0,
-                    "fields": {},
-                    "missing_fields": [],
-                    "error": "No se encontraron documentos en el archivo.",
-                    "source": "Document Intelligence - Layout"
-                }]
-    
-    except Exception as e:
-        data = [{
-                    "extraction_number": 0,
-                    "fields": {},
-                    "missing_fields": [],
-                    "error": str(e),
-                    "source": "Document Intelligence - Layout"
-                }]
-    
-    return data
 
 def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
     client = initialize_client()
@@ -288,30 +254,48 @@ def process_binary_files(binary_files: list, fields_to_extract: list) -> list:
     
     return [final_results]
 
-def find_in_binary_files_layout(binary_files: list, fields_to_extract: list, mothod_prompt:str) -> list:
-    client = initialize_client()
-    final_results = {}
+def split_pdf_in_pages(pdf_bytes):
+    """
+    Desglosa un PDF en memoria en páginas y devuelve una lista con cada página en formato binario.
 
-    for file_data in binary_files:
-        file_name = file_data.get("file_name", "unknown")
-        content = file_data.get("content", b"")
+    :param pdf_bytes: Bytes del archivo PDF (por ejemplo, desde BytesIO).
+    :return: Lista de bytes, donde cada elemento representa una página en formato PDF.
+    """
+    doc = fitz.open("pdf", pdf_bytes)  # Abrir desde bytes
+    paginas = []
 
-        try:
-            # Usar el modelo Layout en lugar del modelo de facturas
-            text_result = analyze_document_layout(client, content, fields_to_extract, mothod_prompt)
-            
-            final_results[file_name] = text_result
-
-        except Exception as e:
-            final_results[file_name] = [{
-                "document_id": 0,
-                "fields": {},
-                "missing_fields": [],
-                "error": str(e),
-                "source": "Document Intelligence - Layout"
-            }]
+    for pagina in doc:
+        pdf_nuevo = fitz.open()  # Crear un nuevo PDF en memoria
+        pdf_nuevo.insert_pdf(doc, from_page=pagina.number, to_page=pagina.number)
+        
+        buffer = io.BytesIO()
+        pdf_nuevo.save(buffer)  # Guardar en memoria
+        pdf_nuevo.close()
+        
+        paginas.append(buffer.getvalue())  # Obtener los bytes de la página
     
-    return [final_results]
+    doc.close()
+    return paginas  # Lista de binarios
+
+# def find_in_binary_files_layout(file_name:str, binary_file, mothod_prompt:str) -> list:
+#     client = initialize_client()
+#     final_results = {}
+#     try:
+#         # Se usa el modelo Layout en lugar del modelo Invoice
+#         text_result = analyze_document_layout(client, binary_file, mothod_prompt)
+        
+#         final_results[file_name] = text_result
+
+#     except Exception as e:
+#         final_results[file_name] = {
+#             "document_id": 0,
+#             "fields": {},
+#             "missing_fields": [],
+#             "error": str(e),
+#             "source": "Document Intelligence - Layout"
+#         }
+    
+#     return [final_results]
 
 class ImageFieldExtractor:
     def __init__(self):
@@ -357,7 +341,7 @@ class ImageFieldExtractor:
                     - El InvoiceId es un número de de 8 digitos que suele tener delante un número de 4 digitos separado por un "-" o una letra mayúscula.
                     - CustomerCodSap no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
 
-                    - NO INVENTES NINGUN DATO. SI EXSISTE ALGUN DATO QUE NO ENCUENTRES EN LA IMAGEN BRINDADA, NO LO OTORGUES EN LA RESPUESTA SI TE VES FORZADO A COMPLETAR CON UN VALOR USA EL VALOR NULL POR DEFECTO.
+                    - NO INVENTES NINGUN DATO. SI EXSISTE ALGUN DATO QUE NO ENCUENTRES EN LA IMAGEN BRINDADA, NO LO OTORGUES EN LA RESPUESTA SI TE VES FORZADO A COMPLETAR CON UN VALOR USA UN STRING VACIO POR DEFECTO.
                     """
             }
         ]
@@ -593,30 +577,30 @@ class ImageFieldExtractor:
         except Exception as e:
             return {"error": str(e)}
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    file_path = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Ejemplos SAP y Esker\\CAP123Doc.pdf"
-    with open(file_path, "rb") as f:
-        file_bytes = f.read()
-    fields_to_extract = ["purchase_number", "due_date"]
-    user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
-    **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
-    **Flujo principal (obligatorio):
-        - Busca en la columna "Referencia" el numero de factura: {''}. Si no encontras la factura intenta el flujo alternativo.
-        - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-        - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-        - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
-    **Flujo alternativo (Opcional):
-        - Busca en la columna "Fecha doc." la fecha: {'02.01.2025'}. Si no encontras la fecha retorna.
-        - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-        - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-        - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
-    **Retorno:
-        - Se debe devolver unicamente los datos que se conocen.
-        - Los datos que no se encontraron se deben indicar como un string vacío.
-        - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
-        - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
-    client = initialize_client()
-    result = analyze_document_layout(client, file_bytes, fields_to_extract, user_text_prompt)
+# if __name__ == "__main__":
+#     logging.basicConfig(level=logging.INFO)
+#     file_path = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Ejemplos SAP y Esker\\CAP123Doc.pdf"
+#     with open(file_path, "rb") as f:
+#         file_bytes = f.read()
+#     fields_to_extract = ["purchase_number", "due_date"]
+#     user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
+#     **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
+#     **Flujo principal (obligatorio):
+#         - Busca en la columna "Referencia" el numero de factura: {''}. Si no encontras la factura intenta el flujo alternativo.
+#         - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+#         - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+#         - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
+#     **Flujo alternativo (Opcional):
+#         - Busca en la columna "Fecha doc." la fecha: {'02.01.2025'}. Si no encontras la fecha retorna.
+#         - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
+#         - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
+#         - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
+#     **Retorno:
+#         - Se debe devolver unicamente los datos que se conocen.
+#         - Los datos que no se encontraron se deben indicar como un string vacío.
+#         - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
+#         - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
+#     client = initialize_client()
+#     result = analyze_document_layout(client, file_bytes, fields_to_extract, user_text_prompt)
 
-    print("Resultado de la extracción:", result)
+#     print("Resultado de la extracción:", result)

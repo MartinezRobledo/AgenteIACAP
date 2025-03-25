@@ -67,6 +67,7 @@ def output_node(state: MailSchema) -> OutputSchema:
         return None  # Si no encuentra nada válido, retorna None
 
     def obtener_facturas(extractions):
+        nulos = ["null", "none", "-"]
         facturas = []
         ids_vistos = set()
         fuentes_facturas = ["Document Intelligence", "Vision"]
@@ -84,28 +85,28 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 invoice_date = page["fields"].get("InvoiceDate", None)
                                         
                                 if invoice_id and invoice_id not in ids_vistos:
-                                    facturas.append({"ID": invoice_id, "Fecha": invoice_date})
-                                    ids_vistos.add(invoice_id)
+                                    if invoice_id not in nulos and invoice_date not in nulos:
+                                        facturas.append({"ID": invoice_id, "Fecha": invoice_date})
+                                        ids_vistos.add(invoice_id)
 
-        if not facturas:
-            for extraccion in extractions:
-                if extraccion["source"] == "Mail":
-                    #extraccion["extractions"] es una lista de objetos por cada documento procesado
-                    for documents in extraccion["extractions"]:
-                        #document es una lista de objetos por cada pagina extraida
-                        for document in documents:
-                            document_data = documents[document]
-                            for page in document_data:
-                                invoice_id = page["fields"].get("InvoiceId", [])
-                                invoice_date = page["fields"].get("InvoiceDate", [])  
-                                # Itero segun la lista con mas elementos
-                                if not invoice_id: invoice_id = []
-                                if not invoice_date: invoice_date = []
-                                max_length = max(len(invoice_id), len(invoice_date))
-                                for i in range(max_length):
-                                    invoice = invoice_id[i] if i < len(invoice_id) else ""
-                                    fecha = invoice_date[i] if i < len(invoice_date) else ""
-                                    facturas.append({"ID": invoice, "Fecha": fecha})
+        for extraccion in extractions:
+            if extraccion["source"] == "Mail":
+                #extraccion["extractions"] es una lista de objetos por cada documento procesado
+                for documents in extraccion["extractions"]:
+                    #document es una lista de objetos por cada pagina extraida
+                    for document in documents:
+                        document_data = documents[document]
+                        for page in document_data:
+                            invoice_id = page["fields"].get("InvoiceId", [])
+                            invoice_date = page["fields"].get("InvoiceDate", [])  
+                            # Itero segun la lista con mas elementos
+                            if not invoice_id: invoice_id = []
+                            if not invoice_date: invoice_date = []
+                            max_length = max(len(invoice_id), len(invoice_date))
+                            for i in range(max_length):
+                                invoice = invoice_id[i] if i < len(invoice_id) else ""
+                                fecha = invoice_date[i] if i < len(invoice_date) else ""
+                                facturas.append({"ID": invoice, "Fecha": fecha})
 
         return facturas
 
@@ -158,8 +159,8 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
                                 -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
                                 -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html para que se pueda estructurar en Outlook y no incluyas asunto en la respuesta.
-                                -Firma siempre el mail con 'CAP - Centro de Atención a Proveedores YPF'.
                                 -No aclares que estas generando un mail de respuesta, solo brinda el mail.
+                                -No generes un saludo de despedida ni una firma.
                                  """)
         return response.content
 

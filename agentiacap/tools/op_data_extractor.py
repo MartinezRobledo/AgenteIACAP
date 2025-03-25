@@ -1,5 +1,26 @@
 from asyncio.log import logger
-from agentiacap.tools.document_intelligence import find_in_binary_files_layout
+import json
+import os
+from openai import AzureOpenAI
+from pydantic import BaseModel, Field
+from agentiacap.tools.document_intelligence import extract_table_layout, split_pdf_in_pages
+from typing import List, Dict, Optional
+
+class ComparativaBusqueda(BaseModel):
+    original: str = Field(
+        description='Campo destinado a contener el valor original de la factura buscada'
+    )
+    encontrada: str = Field(
+        description='Campo destinado a contener el valor completo de la factura encontrada'
+    )
+
+class ResultadoBusqueda(BaseModel):
+    encontradas: List[ComparativaBusqueda] = Field(
+        description='Lista de facturas encontradas en la búsqueda'
+    )
+    no_encontradas: List[str] = Field(
+        description='Lista de facturas no encontradas en la búsqueda'
+    )
 
 fields_to_extract_sap = [
     "purchase_number",
@@ -11,60 +32,126 @@ fields_to_extract_esker = [
     "rejection_reason"
 ]
 
+def asistente(user_prompt):
+    try:
+        system_prompt = f"""Eres un asistente especializado en obtener datos de documentos. 
+            Los documentos que vas a analizar son PDFs que contienen los datos estructurados como tabla.
+            Primero se preprocesa el documento con Document Intelligence Prebuilt-Layout y luego se te pasan las lecturas incluidas en un prompt de usuario para que realices la obtencion de datos."""
+        user_content = [{
+            "type": "text",
+            "text": user_prompt
+        }]
+        
+        openai_client = AzureOpenAI(
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # Usamos la API key para autenticación
+            api_version="2024-12-01-preview" # Requires the latest API version for structured outputs.
+        )
+        
+        completion = openai_client.beta.chat.completions.parse(
+            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_content
+                }
+            ],
+            response_format=ResultadoBusqueda,
+            max_tokens=10000,
+            temperature=0,
+            top_p=0.1,
+        )
+        extractions = completion.choices[0].message.content
+        extractions = json.loads(extractions)
+        
+    except Exception as e:
+        extractions = {"error": str(e)}
+    
+    return extractions
+
+def buscar_encontrados_fechas(inputs, pendientes):
+    """
+    Extrae las facturas encontradas en la respuesta del modelo.
+
+    :param response: Lista de diccionarios con los datos extraídos del documento.
+    :return: Lista de números de factura encontrados.
+    """
+    encontrados = []
+
+    for resultado in inputs:
+        if "fields" in resultado and resultado["fields"]:
+            fecha = resultado["fields"].get("date")
+            encontrado = resultado["fields"].get("found")
+            if encontrado:
+                encontrados.append(resultado)
+                # Filtro la lista excluyendo el elemento deseado y me aseguro que pendientes siempre sea menor o igual.
+                pendientes = [p for p in pendientes if not p["Fecha"] == fecha]
+    
+    return {"encontrados":encontrados, "pendientes":pendientes}
+
 async def ExtractSAP(files: list, inputs: list):
     try:
         result = []
-        for data in inputs:
-            invoice, date = data.get("invoice", ""), data.get("date", "")
-            user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
-            **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
-            **Flujo principal (obligatorio):
-                - Busca en la columna "Referencia" el numero de factura: {invoice}. Si no encontras la factura intenta el flujo alternativo.
-                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp.", obtene 'due_date' de la columna "Vence El" y obtené "date_comp" de la columna "Compens.". Si no encontras el numero retorna en este punto.
-                - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-                - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
-            **Flujo alternativo (Opcional):
-                - Busca en la columna "Fecha doc." la fecha: {date}. Si no encontras la fecha retorna.
-                - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp.", obtené 'due_date' de la columna "Vence El" y obtené "comp_date" de la columna "Compens.". Si no encontras el numero retorna en este punto.
-                - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-                - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
-            **Retorno:
-                - Se debe devolver unicamente los datos que se conocen.
-                - Los datos que no se encontraron se deben indicar como un string vacío.
-                - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
-                - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
-            result += find_in_binary_files_layout(binary_files=files, fields_to_extract=fields_to_extract_sap, mothod_prompt=user_text_prompt)
+                    
+        for file in files:
+            content = file.get("content", b"")
+            pages = split_pdf_in_pages(content)
+            encontradas = []
+            libro = []
+            facturas_pendientes = [factura["ID"] for factura in inputs if factura["ID"]]
+            if facturas_pendientes:
+                for i, page in enumerate(pages):
+                    tables = extract_table_layout(file_bytes=page, header_ref="Referencia")
+                    df = tables[0]
+                    libro.append(
+                        {
+                            "page": i,
+                            "content": df
+                        }
+                    )
+
+                    user_prompt = f"""Dada esta lista de facturas,
+                    **Lista de facturas:**
+                    {df["Referencia"]}
+
+                    Indicame cúales de estos intentos de factura se encuentran en la lista:
+                    {facturas_pendientes}
+
+                    **Retorno:**
+                        - Las facturas encontradas agrupalas como una lista de diccionarios donde ubicaras las facturas originales con la factura que encontraste.
+                        - Las facturas no encontradas agrupalas como una lista."""
+                    
+                    response = asistente(user_prompt)
+                    if response.get("error", []):
+                        raise Exception({"nodo": "SAP data extractor", "error": response.get("error")})
+                    
+                    encontradas_page = response.get("encontradas")
+                    if encontradas_page:
+                        inputs = [i for i in inputs if i["ID"] not in [e["original"] for e in encontradas_page]]
+                        encontradas.append(
+                            {
+                                "page": i,
+                                "faturas": encontradas_page
+                            }
+                        ) 
+                    facturas_pendientes = response.get("no_encontradas")
+
+                    if not facturas_pendientes:
+                        break
+                
+            
+        for dato in inputs:
+            result.append(
+                {
+                    "sub-category": "Facturas no encontradas",
+                    "fields": dato
+                }
+            )
         return {"extractions": result}
     except Exception as e:
         logger.error(f"Error en 'ExtractSAP': {str(e)}")
-        raise
-
-async def ExtractEsker(files: list, inputs: list):
-    try:
-        result = []
-        for data in inputs:
-            invoice, date = data.get("invoice", ""), data.get("date", "")
-            user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
-            **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
-            **Flujo principal (obligatorio):
-                - Busca en la columna "Número de factura" el numero de factura: {invoice}. Si no encontras la factura intenta el flujo alternativo.
-                - Si lo encontras obtené de la misma fila:
-                    -La fecha de factura que esta en la columna "Fecha de factura".
-                    -El importe de la columna "Importe".
-                    -El motivo de rechazo de la columna "Motivo del rechazo".
-            **Flujo alternativo (Opcional):
-                - Busca en la columna "Fecha de factura" la fecha: {date}. Si no encontras la fecha retorna.
-                - Si lo encontras obtené de la misma fila:
-                    -La fecha de factura que esta en la columna "Fecha de factura".
-                    -El importe de la columna "Importe".
-                    -El motivo de rechazo de la columna "Motivo del rechazo".
-            **Retorno:
-                - Se debe devolver unicamente los datos que se conocen.
-                - Los datos que no se encontraron se deben indicar como un string vacío.
-                - El campo found es un bool que indica si se encontró o no el numero de factura/fecha.
-                - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo date."""
-            result += find_in_binary_files_layout(binary_files=files, fields_to_extract=fields_to_extract_esker, mothod_prompt=user_text_prompt)
-        return {"aggregate": result}
-    except Exception as e:
-        logger.error(f"Error en 'ExtractEsker': {str(e)}")
         raise

@@ -23,7 +23,6 @@ STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 STORAGE_ACCOUNT_CONTAINER_NAME = os.getenv("STORAGE_ACCOUNT_CONTAINER_NAME")
 STORAGE_ACCOUNT_ENDPOINT = os.getenv("STORAGE_ACCOUNT_ENDPOINT")
 
-
 def generar_firma_azure(verb, content_length, content_type, date, canonicalized_resource):
     """Genera la firma para la autenticación con la Access Key"""
     string_to_sign = f"{verb}\n\n\n{content_length}\n\n{content_type}\n\n\n\n\n\n\nx-ms-date:{date}\nx-ms-version:2021-12-02\n{canonicalized_resource}"
@@ -151,7 +150,7 @@ async def ExtractionSap(req: dict) -> dict:
     logging.info("Python activity function processed a request.")
 
     try:
-        inputs = req["inputs"]
+        inputs = req["facturas"]
         urls_adjuntos = req["adjuntos"]
 
     except Exception as e:

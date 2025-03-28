@@ -17,6 +17,8 @@ from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 from typing import Optional
 from pydantic import BaseModel, Field
 import pandas as pd
+
+from agentiacap.utils.globals import Retencion
 #   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
 
 class SapReg(BaseModel):
@@ -314,35 +316,14 @@ class ImageFieldExtractor:
         )
         self.gpt_model_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o")
 
-    def create_user_content(self, base64_data: str, fields_to_extract: List[str], restrictions: list):
+    def create_user_content(self, base64_data: str, prompt:str):
         """
         Crea el contenido que se enviará al modelo para procesar.
         """
         user_content = [
             {
                 "type": "text",
-                "text": f"""
-                    Extrae los siguientes campos del documento: {', '.join(fields_to_extract)}.
-                    - Si un valor no está presente, indica "".
-                    - Devuelve las fechas en formato dd-MM-yyyy.
-                    - El "PurchaseOrderName" siempre es un número de 10 dígitos referenciado como orden de pago o similares y tiene la caracteristica de que siempre empieza con 2 o con 36. Ejemplos tipicos de este numero pueden ser 2000002154, 2000000831, 2000010953.  No siempre esta presente este dato.
-                    -"CustomerName": se refiere a la sociedad por la que se hace la consulta. Solo se pueden incluir las sociedades permitidas en la lista de sociedades.
-                    **Lista de sociedades permitidas:
-                    {restrictions}
-                    **Aclaración sobre lista de sociedades permitidas:**
-                    - Cada elemento de la lista hace referencia a una unica sociedad.
-                    - Cada apartado de un elemento sirve para identificar a la misma sociedad. Los apartados estan delimitados por ','.
-                    - Si detectas un dato de la lista en el documento completa los datos del customer con los datos de la lista para ese customer.
-                    - Cualquier nombre de sociedad o CUIT encontrado en el documento que no tenga match con la lista de sociedades deberá interpretarse como dato del Vendor.
-                    - El campo "Signed" es un flag (booleano) para indicar si el documento está firmado. En caso de que reconozcas una firma deberás setear este campo como True.
-
-                    **Aclaraciones generales:**
-                    - Un documento puede tener mas de un InvoiceId.
-                    - El InvoiceId es un número de de 8 digitos que suele tener delante un número de 4 digitos separado por un "-" o una letra mayúscula.
-                    - CustomerCodSap no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
-
-                    - NO INVENTES NINGUN DATO. SI EXSISTE ALGUN DATO QUE NO ENCUENTRES EN LA IMAGEN BRINDADA, NO LO OTORGUES EN LA RESPUESTA SI TE VES FORZADO A COMPLETAR CON UN VALOR USA UN STRING VACIO POR DEFECTO.
-                    """
+                "text": prompt
             }
         ]
         user_content.append({
@@ -361,8 +342,16 @@ class ImageFieldExtractor:
         invoices = data.get("invoices",[])
 
         return invoices
+    
+    def parse_completion_response_str(self, completion):
+        """
+        Procesa la respuesta del modelo para extraer el JSON válido y convertirlo en un diccionario de campos.
+        """
+        extracted_data = completion.model_dump()
+        content = extracted_data["choices"][0]["message"]["content"]
+        return content
 
-    def extract_fields(self, base64_images: list, fields_to_extract: List[str], restrictions: list):
+    def extract_fields(self, base64_images: list, fields_to_extract: list, restrictions: list):
         """
         Extrae datos específicos de una lista de imágenes en base64 y organiza los resultados en un diccionario.
 
@@ -403,7 +392,29 @@ class ImageFieldExtractor:
                     }]
                     continue
 
-                user_content = self.create_user_content(content, fields_to_extract, restrictions)
+                prompt = f"""
+                    Extrae los siguientes campos del documento: {', '.join(fields_to_extract)}.
+                    - Si un valor no está presente, indica "".
+                    - Devuelve las fechas en formato dd-MM-yyyy.
+                    - El "PurchaseOrderName" siempre es un número de 10 dígitos referenciado como orden de pago o similares y tiene la caracteristica de que siempre empieza con 2 o con 36. Ejemplos tipicos de este numero pueden ser 2000002154, 2000000831, 2000010953.  No siempre esta presente este dato.
+                    -"CustomerName": se refiere a la sociedad por la que se hace la consulta. Solo se pueden incluir las sociedades permitidas en la lista de sociedades.
+                    **Lista de sociedades permitidas:
+                    {', '.join([str(soc) for soc in restrictions])}
+                    **Aclaración sobre lista de sociedades permitidas:**
+                    - Cada elemento de la lista hace referencia a una unica sociedad.
+                    - Cada apartado de un elemento sirve para identificar a la misma sociedad. Los apartados estan delimitados por ','.
+                    - Si detectas un dato de la lista en el documento completa los datos del customer con los datos de la lista para ese customer.
+                    - Cualquier nombre de sociedad o CUIT encontrado en el documento que no tenga match con la lista de sociedades deberá interpretarse como dato del Vendor.
+                    - El campo "Signed" es un flag (booleano) para indicar si el documento está firmado. En caso de que reconozcas una firma deberás setear este campo como True.
+
+                    **Aclaraciones generales:**
+                    - Un documento puede tener mas de un InvoiceId.
+                    - El InvoiceId es un número de de 8 digitos que suele tener delante un número de 4 digitos separado por un "-" o una letra mayúscula.
+                    - CustomerCodSap no se va a encontrar sobre el documento, se debe completar con 'Código SAP' de la lista de sociedades que le corresponda al Customer encontrado. Si no se encuentra ningun customer completar con "".
+
+                    - NO INVENTES NINGUN DATO. SI EXSISTE ALGUN DATO QUE NO ENCUENTRES EN LA IMAGEN BRINDADA, NO LO OTORGUES EN LA RESPUESTA SI TE VES FORZADO A COMPLETAR CON UN VALOR USA UN STRING VACIO POR DEFECTO.
+                    """
+                user_content = self.create_user_content(content, prompt)
 
                 messages = [
                     {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
@@ -413,7 +424,7 @@ class ImageFieldExtractor:
                 total_tokens = 0  # Definir total_tokens antes del try-except
 
                 try:
-                    logging.info(f"Se está por procesar la imagen {file_name} con el LLM")
+                    print(f"Se está por procesar la imagen {file_name} con el LLM")
                     completion = self.openai_client.chat.completions.create(
                         model=self.gpt_model_name,
                         messages=messages,
@@ -492,115 +503,208 @@ class ImageFieldExtractor:
         except Exception as e:
             return {"error": str(e)}
 
-    def extract_fields_binary(self, binary_images: list, fields_to_extract: List[str]):
-        """
-        Extrae datos específicos de una lista de imágenes en binario y organiza los resultados en un diccionario.
+    # def extract_fields_binary(self, binary_images: list, fields_to_extract: List[str]):
+    #     """
+    #     Extrae datos específicos de una lista de imágenes en binario y organiza los resultados en un diccionario.
 
-        :param binary_images: Lista de diccionarios con datos de las imágenes (file_name y content en binario).
+    #     :param binary_images: Lista de diccionarios con datos de las imágenes (file_name y content en binario).
+    #     :param fields_to_extract: Lista de campos a extraer.
+    #     :return: Diccionario con los resultados extraídos o información de error.
+    #     """
+    #     try:
+    #         if not binary_images or not isinstance(binary_images, list):
+    #             raise ValueError("La lista de imágenes en binario no es válida.")
+    #         if not fields_to_extract or not isinstance(fields_to_extract, list):
+    #             raise ValueError("La lista de campos a extraer no es válida.")
+
+    #         all_results = {}
+
+    #         for index, image_data in enumerate(binary_images):
+    #             file_name = image_data.get("file_name", f"unknown_{index + 1}")
+    #             content = image_data.get("content", b"")  # Ahora es binario
+
+    #             if not content:
+    #                 all_results[file_name] = {
+    #                     "fields": {},
+    #                     "missing_fields": [],
+    #                     "error": "El contenido de la imagen está vacío.",
+    #                     "source": "Vision"
+    #                 }
+    #                 continue
+
+    #             # Crear input con el contenido binario
+    #             user_content = self.create_user_content(content, fields_to_extract)
+
+    #             messages = [
+    #                 {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
+    #                 {"role": "user", "content": user_content}
+    #             ]
+
+    #             total_tokens = 0  # Definir total_tokens antes del try-except
+
+    #             try:
+    #                 completion = self.openai_client.chat.completions.create(
+    #                     model=self.gpt_model_name,
+    #                     messages=messages,
+    #                     max_tokens=10000,
+    #                     temperature=0.1,
+    #                     top_p=0.1
+    #                 )
+
+
+    #                 # Asegurar que total_tokens siempre esté definido
+    #                 prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
+    #                 completion_tokens = getattr(completion.usage, "completion_tokens", 0)
+    #                 total_tokens = prompt_tokens + completion_tokens
+
+    #                 data = self.parse_completion_response(completion)
+
+    #                 # Crear el diccionario de campos extraídos
+    #                 extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
+
+    #                 # Identificar campos faltantes
+    #                 missing_fields = [field for field, value in extracted_fields.items() if value is None]
+
+    #                 # Guardar resultados en un diccionario
+    #                 all_results[file_name] = {
+    #                     "invoice_number": index + 1,
+    #                     "fields": extracted_fields,
+    #                     "missing_fields": missing_fields,
+    #                     "error": "",
+    #                     "source": "Vision",
+    #                     "tokens": total_tokens
+    #                 }
+
+    #             except Exception as model_error:
+    #                 all_results[file_name] = {
+    #                     "fields": {},
+    #                     "missing_fields": [],
+    #                     "error": str(model_error),
+    #                     "source": "Vision",
+    #                     "tokens": total_tokens
+    #                 }
+
+    #         return all_results
+    #     except Exception as e:
+    #         return {"error": str(e)}
+
+    def es_carta_modelo(self, base64_images):
+        """
+        Extrae datos específicos de una lista de imágenes en base64 y organiza los resultados en un diccionario.
+
+        :param base64_images: Lista de diccionarios con datos de las imágenes (file_name y content).
         :param fields_to_extract: Lista de campos a extraer.
         :return: Diccionario con los resultados extraídos o información de error.
         """
         try:
-            if not binary_images or not isinstance(binary_images, list):
-                raise ValueError("La lista de imágenes en binario no es válida.")
-            if not fields_to_extract or not isinstance(fields_to_extract, list):
-                raise ValueError("La lista de campos a extraer no es válida.")
+            if not base64_images or not isinstance(base64_images, list):
+                raise ValueError("La lista de imágenes base64 no es válida.")
 
-            all_results = {}
+            all_results = []
 
-            for index, image_data in enumerate(binary_images):
+            for index, image_data in enumerate(base64_images):
                 file_name = image_data.get("file_name", f"unknown_{index + 1}")
-                content = image_data.get("content", b"")  # Ahora es binario
+                content = image_data.get("content", "")
 
                 if not content:
-                    all_results[file_name] = {
+                    all_results[file_name] = [{
                         "fields": {},
                         "missing_fields": [],
-                        "error": "El contenido de la imagen está vacío.",
+                        "error": "El contenido base64 está vacío.",
                         "source": "Vision"
-                    }
+                    }]
+                    continue
+                # Intentar decodificar para validar contenido base64
+                try:
+                    base64.b64decode(content, validate=True)
+                except Exception as error:
+                    error_message = f"El contenido del archivo en base64 no es válido. Error: {error}"
+                    all_results[file_name] = [{
+                        "fields": {},
+                        "missing_fields": [],
+                        "error": error_message,
+                        "source": "Vision"
+                    }]
                     continue
 
-                # Crear input con el contenido binario
-                user_content = self.create_user_content(content, fields_to_extract)
+                prompt = "Identifica si la siguiente imagen es una carta modelo y si lo es extrae los datos de la carta."
+                
+                user_content = self.create_user_content(content, prompt)
 
                 messages = [
-                    {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
-                    {"role": "user", "content": user_content}
+                    {
+                        "role": "system", 
+                        "content": """Eres un asistente experto en reconocer un tipo de documento llamado "Carta Modelo".
+                        Este documento tiene formato de carta en la cual se reconocen 4 grupos importantes:
+                        1-Se menciona fecha y lugar de la redacción como en toda carta.
+                        2-Tiene un texto inicial que debe contener el mensaje "dichas retenciones no se computaron ni se computarán". En caso de no mencionar la expresión textual se descarta como carta modelo si importar el resto de grupos.
+                        3-Luego del texto inicial contiene un listado con datos de facturación de los cuales se debe mencionar: "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago", "Fecha en que fue realizada la retención", "Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc)", "Razón social de la empresa del grupo YPF que aplicó la retención", "Lugar en donde presentó la factura que dio lugar a la retención (seguramente sea una dirección de mail)". Si el listado de facturacion menciona otros datos descarta el documento como carta modelo sin importar los otros grupos.
+                        4-Por último contiene al pie de página la firma del proveedor que redacta la carta. Se debe reconocer la firma manuscrita realizada por una persona. Si no contiene la firma pero si el resto de grupos indica que es una carta modelo sin firmar.
+
+                        **Salida esperada:**
+                        -En caso de reconocer que sea una carta modelo indica:
+                            * Indica como verdadero "Es nota modelo" y brinda una explicación del por que reconoces el documento como tal.
+                            * Razón social y CUIT del proveedor
+                            * Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago
+                            * Fecha en que fue realizada la retención.
+                            * Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc). En caso de que la misma sea aplicada por Ingresos Brutos, especificar a qué provincia corresponde la retención.
+                            * Razón social de la empresa del grupo YPF que aplicó la retención
+                            * Lugar en donde presentó la factura que dio lugar a la retención (seguramente sea una dirección de mail)
+                            * Indica como verdadero si está firmada.
+                            * Si pudiste completar todos los datos pedidos, indica como verdadero "Datos completos".
+
+
+                        -En caso de no reconocer el patrón de los 4 grupos detallados devolve:
+                            * "No es carta modelo" y brinda una explicación del por que no pudiste reconocer el documento como tal.
+                            * Completa con un string vacío el resto de campos obligatorios.
+                        """
+                    },
+                    {
+                        "role": "user", 
+                        "content": user_content
+                    }
                 ]
 
                 total_tokens = 0  # Definir total_tokens antes del try-except
 
                 try:
+                    logging.info(f"Se está por procesar la imagen {file_name} con el LLM")
                     completion = self.openai_client.chat.completions.create(
                         model=self.gpt_model_name,
                         messages=messages,
-                        max_tokens=10000,
-                        temperature=0.1,
-                        top_p=0.1
+                        max_tokens=16384,
+                        temperature=0,
+                        response_format={
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": "nota_modelo_schema",
+                                "strict": True,
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "es_nota_modelo": {"type": "boolean"},
+                                        "datos": {"type": ["string", "null"]},
+                                        "datos_completos": {"type": "boolean"},
+                                        "firmada": {"type": "boolean"}
+                                    },
+                                    "required": ["es_nota_modelo", "datos", "datos_completos", "firmada"],
+                                    "additionalProperties": False
+                                }
+                            }
+                        }
                     )
 
-
-                    # Asegurar que total_tokens siempre esté definido
-                    prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
-                    completion_tokens = getattr(completion.usage, "completion_tokens", 0)
-                    total_tokens = prompt_tokens + completion_tokens
-
-                    data = self.parse_completion_response(completion)
-
-                    # Crear el diccionario de campos extraídos
-                    extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
-
-                    # Identificar campos faltantes
-                    missing_fields = [field for field, value in extracted_fields.items() if value is None]
-
-                    # Guardar resultados en un diccionario
-                    all_results[file_name] = {
-                        "invoice_number": index + 1,
-                        "fields": extracted_fields,
-                        "missing_fields": missing_fields,
-                        "error": "",
-                        "source": "Vision",
-                        "tokens": total_tokens
-                    }
-
+                    # print(f"Se ha procesado la imagen con el LLM.\nCompletion: \n{completion}")
+                    data = self.parse_completion_response_str(completion)
+                    print(f"Data extraida con VISION: \n{data}")
+                    # prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
+                    # completion_tokens = getattr(completion.usage, "completion_tokens", 0)
+                    # total_tokens = prompt_tokens + completion_tokens
+                    all_results.append({"file_name": file_name, **json.loads(data)})
+                    logging.info(f"Resultados de la imagen {file_name} guardados")
                 except Exception as model_error:
-                    all_results[file_name] = {
-                        "fields": {},
-                        "missing_fields": [],
-                        "error": str(model_error),
-                        "source": "Vision",
-                        "tokens": total_tokens
-                    }
+                    all_results[file_name] = {"error": str(model_error)}
 
             return all_results
         except Exception as e:
             return {"error": str(e)}
-
-# if __name__ == "__main__":
-#     logging.basicConfig(level=logging.INFO)
-#     file_path = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Ejemplos SAP y Esker\\CAP123Doc.pdf"
-#     with open(file_path, "rb") as f:
-#         file_bytes = f.read()
-#     fields_to_extract = ["purchase_number", "due_date"]
-#     user_text_prompt = f"""Extrae los datos de la tabla siguiendo estos pasos:
-#     **Aclaración: Solo se debe ejecutar el flujo alternativo si el flujo principal lo solicita explícitamente.
-#     **Flujo principal (obligatorio):
-#         - Busca en la columna "Referencia" el numero de factura: {''}. Si no encontras la factura intenta el flujo alternativo.
-#         - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-#         - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-#         - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'purchase_number' y el la fecha 'op_date' de la columna "Fecha doc.".
-#     **Flujo alternativo (Opcional):
-#         - Busca en la columna "Fecha doc." la fecha: {'02.01.2025'}. Si no encontras la fecha retorna.
-#         - Si lo encontras obtené el numero de 10 digitos que esta en la misma fila sobre la columna "Doc. comp." y obtene 'due_date' de la columna "Vence El". Si no encontras el numero retorna en este punto.
-#         - Con el número obtenido vas a buscar alguna fila que lo contenga en la columna "Nº doc." y tenga el valor 'OP' en la columna "Clas". Si no encontras ninguna fila que cumpla retorna en este punto.
-#         - Si encontras dicha fila entonces devolvé el numero de 10 digitos obtenido como 'op' y el la fecha 'op_date' de la columna "Fecha doc.".
-#     **Retorno:
-#         - Se debe devolver unicamente los datos que se conocen.
-#         - Los datos que no se encontraron se deben indicar como un string vacío.
-#         - El campo found es un bool que indica si se encontró o no el numero de 10 digitos correspondiente a purchase_number.
-#         - El campo overdue es un bool que indica si la fecha actual es mayor a la fecha de vencimeinto que corresponde al campo due_date."""
-#     client = initialize_client()
-#     result = analyze_document_layout(client, file_bytes, fields_to_extract, user_text_prompt)
-
-#     print("Resultado de la extracción:", result)

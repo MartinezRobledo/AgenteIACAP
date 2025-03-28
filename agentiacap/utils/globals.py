@@ -1,7 +1,6 @@
 from typing_extensions import Annotated, TypedDict
 
 ### Clases reutilizables ###
-
 class MailSchema(TypedDict):
     cuerpo_original:str
     asunto:Annotated[str, ...]
@@ -24,6 +23,13 @@ class InputSchema(TypedDict):
 
 class OutputSchema(TypedDict):
     result: Annotated[dict, ...]
+
+class Retencion(TypedDict):
+    es_nota_modelo: bool
+    datos_completos: bool
+    datos: str
+    firmada: bool
+
 
 ### Variables Globales ###
 
@@ -95,7 +101,7 @@ lista_sociedades = [
 
 relevant_categories = [
     "Estado de facturas", 
-    "Pedido devolución retenciones", 
+    # "Pedido devolución retenciones", 
     "Impresión de OP y/o Retenciones"
 ]
 

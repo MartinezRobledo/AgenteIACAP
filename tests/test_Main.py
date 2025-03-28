@@ -16,8 +16,8 @@ from urllib.parse import quote
 
 from agentiacap.workflows.sentiment_validator import sentiment
 
-INPUT_FILE = "D:\\Python\\Agentiacap\\Pruebas -12-03.xlsx"
-OUTPUT_FILE = "D:\\Python\\Agentiacap\\Pruebas -12-03-Resultados.xlsx"
+INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Devolución de retenciones - Casos reales.xlsx"
+OUTPUT_FILE = "D:\\Python\\Agentiacap\\Pruebas - Pedido devolución retenciones - 27032025.xlsx"
 
 load_dotenv()
 
@@ -159,6 +159,57 @@ async def process_excel():
             df.to_excel(OUTPUT_FILE, index=False)
             time.sleep(2)
 
+async def process_excel_devretenciones():
+    df = pd.read_excel(INPUT_FILE)
+    
+    if not {'InputData'}.issubset(df.columns):
+        raise ValueError("El archivo Excel debe contener las columnas 'InputData'")
+
+    if "Extracción" not in df.columns:
+        df["Extracción"] = None
+    if "Categoria inferida" not in df.columns:
+        df["Categoria inferida"] = None
+    if "Sentimiento" not in df.columns:
+        df["Sentimiento"] = None
+    
+    for index, row in df.iterrows():
+        try:
+            urls_adjuntos = json.loads(row["InputData"])["adjuntos"]
+            cuerpo = json.loads(row["InputData"])["cuerpo"]
+            asunto = json.loads(row["InputData"])["asunto"]
+            try:
+                adjuntos = []
+                for file_url in urls_adjuntos:
+                    archivo = obtener_blob_por_url(file_url)
+                    if archivo:
+                        adjuntos.append(archivo)
+                    else:
+                        logging.warning(f"No se pudo obtener el archivo desde {file_url}")
+            except:
+                return {"error": "Error al obtener archivos del storage."}
+            
+            input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos)
+            response = await graph.ainvoke(input=input_data)
+            result = response.get("result", {})
+            category = result.get("category", {})
+            print(f"DEBUG - Categoria obtenida: {category}")
+            
+            extractions = result.get("extractions", {})
+            df.at[index, "Categoria inferida"] = category if category else "No detectada"
+            response = await sentiment(subject=asunto, message=cuerpo)    
+            df.at[index, "Extracción"] = extractions
+            df.at[index, "Sentimiento"] = response
+            
+            df.to_excel(OUTPUT_FILE, index=False)
+            print(f"Fila {index} procesada y guardada en Excel.")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error en fila {index}: {e}")
+            df.at[index, "Extracción"] = e
+            df.at[index, "Categoria inferida"] = "Error"
+            df.to_excel(OUTPUT_FILE, index=False)
+            time.sleep(2)
+
 
 import os
 async def process_json():
@@ -199,4 +250,5 @@ async def process_json():
 
 if __name__ == "__main__":
     # asyncio.run(process_excel())
+    # asyncio.run(process_excel_devretenciones())
     asyncio.run(process_json())

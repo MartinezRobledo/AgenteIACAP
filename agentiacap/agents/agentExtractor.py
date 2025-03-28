@@ -3,17 +3,14 @@ import operator
 import json
 import logging
 from collections import defaultdict
-from pydantic import BaseModel
 from typing_extensions import TypedDict
-from langchain_core.messages import HumanMessage, SystemMessage
-from typing import Annotated, List, Literal, Optional, Sequence
+from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
-from agentiacap.tools.document_intelligence import ImageFieldExtractor, process_binary_files, find_in_binary_files_layout
+from agentiacap.tools.document_intelligence import ImageFieldExtractor, process_binary_files
 from agentiacap.utils.globals import InputSchema
 from agentiacap.llms.llms import llm4o
 from agentiacap.llms.Prompts import TextExtractorPrompt, fields_to_extract, merger_definition 
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from agentiacap.utils.globals import lista_sociedades
 
 # Configuración del logger

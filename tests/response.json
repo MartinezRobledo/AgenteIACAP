@@ -2,51 +2,15 @@
     "category": "Pedido devolución retenciones",
     "extractions": [
         {
-            "source": "Mail",
-            "extractions": [
-                {
-                    "Mail": [
-                        {
-                            "extraction_number": null,
-                            "fields": {
-                                "CustomerName": "YPF S.A.",
-                                "CustomerTaxId": "30546689979",
-                                "InvoiceId": [
-                                    "150079033"
-                                ],
-                                "VendorName": "ECOLAB ARGENTINA S.R.L",
-                                "VendorTaxId": "",
-                                "PurchaseOrderNumber": null,
-                                "InvoiceDate": [
-                                    "12/03/2025"
-                                ],
-                                "InvoiceTotal": "71,760,533.92"
-                            },
-                            "missing_fields": [
-                                "CustomerCodSap",
-                                "CustomerAddress",
-                                "Signed"
-                            ],
-                            "tokens": 0
-                        }
-                    ]
-                }
-            ]
+            "file_name": "Test/Firmas/Nota modelo-Devolución de Retenciones2000091532_signed_Caso 10.pdf-page_1.jpg",
+            "es_nota_modelo": true,
+            "datos": "Razón social: CLARIANT ARGENTINA SA, CUIT: 30594623416, Número de factura: 2000091532, Fecha de retención: 23.10.2024, Impuesto: IIBB Neuquén, Empresa YPF: YPF S.A., Dirección de presentación: facturacion@proveedoresypf.com",
+            "datos_completos": true,
+            "firmada": false
         }
     ],
     "tokens": 0,
-    "resume": {
-        "CUIT": null,
-        "Proveedor": "ECOLAB ARGENTINA S.R.L",
-        "Sociedad": "YPF S.A.",
-        "Cod_Sociedad": null,
-        "Facturas": [
-            {
-                "ID": "150079033",
-                "Fecha": "12/03/2025"
-            }
-        ]
-    },
+    "resume": {},
     "is_missing_data": true,
-    "message": "<html>\n<body>\n<p>Estimado,</p>\n\n<p>Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:</p>\n<ul>\n    <li>CUIT</li>\n    <li>Sociedad de YPF a la que se facturó</li>\n    <li>Facturas (recordá mencionarlas con su número completo 9999A99999999)</li>\n    <li>Montos</li>\n</ul>\n\n<p>De tu consulta pudimos obtener la siguiente información:</p>\n<ul>\n    <li><strong>CUIT:</strong> sin datos</li>\n    <li><strong>Sociedad:</strong> YPF S.A.</li>\n    <li><strong>Facturas:</strong>\n        <ul>\n            <li>ID: 150079033</li>\n            <li>Fecha: sin datos</li>\n        </ul>\n    </li>\n</ul>\n\n<p>En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.</p>\n</body>\n</html>"
+    "message": "<p>Estimado proveedor,</p>\n    <p>Recordamos los puntos a cumplir para el envío de la nota de pedido de devolución:</p>\n    <ul>\n        <li><strong>Leyenda:</strong> No se computó ni se computará la retención (si omite esta leyenda no se dará curso a la devolución).</li>\n        <li><strong>Razón social y CUIT del proveedor.</strong></li>\n        <li><strong>Número de Orden de Pago</strong> o, en su defecto, de las facturas afectadas.</li>\n        <li><strong>Fecha en que fue realizada la retención.</strong></li>\n        <li><strong>Impuesto o tasa correspondiente</strong> a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc).</li>\n        <li><strong>Si la retención es de Ingresos Brutos,</strong> especificar a qué provincia corresponde.</li>\n        <li><strong>Razón social de la empresa del grupo YPF</strong> que aplicó la retención.</li>\n        <li><strong>Lugar en donde presentó la factura</strong> que dio lugar a la retención erróneamente calculada (si fue por mail, indicar la casilla de correo).</li>\n        <li><strong>Firma de un apoderado de la empresa</strong> (firma y sello; si no posee sello, colocar firma y DNI).</li>\n    </ul>\n    <br><p>Por favor, revise el archivo adjunto: Nota modelo-Devolución de Retenciones2000091532_signed_Caso 10.pdf-page_1</p>\n    <p>Atentamente,<br>Equipo de Atención a Proveedores</p>\n"
 }

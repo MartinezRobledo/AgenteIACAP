@@ -1,0 +1,71 @@
+{
+    "result": [
+        {
+            "Ejemplo carta modelo.pdf-page_1.jpg": {
+                "Salida esperada": "Es carta modelo",
+                "Explicación": "El documento cumple con los 4 grupos importantes que definen una carta modelo: \n                1. Se menciona la fecha y lugar de redacción: 'Ciudad de Buenos Aires, 22 de enero del 2025'.\n                2. Contiene el texto inicial con el mensaje 'dichas retenciones no se computaron ni se computarán'.\n                3. Incluye un listado con datos de facturación, detallando número de factura, impuesto, fecha de retención, razón social de la empresa del grupo YPF y lugar de presentación de la factura.\n                4. Al pie de página, se encuentra la firma del proveedor que redacta la carta.",
+                "CUIT": "30-71177044-1",
+                "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago": [
+                    "0008A00000147",
+                    "0008A00000148",
+                    "0008A00000149"
+                ],
+                "Fecha en que fue realizada la retención": "15/01/2025",
+                "Impuesto o tasa correspondiente a dicha retención": "IVA",
+                "Razón social de la empresa del grupo YPF que aplicó la retención": "YPF S.A",
+                "Lugar en donde presentó la factura que dio lugar a la retención": "recepciondefacturas@ypf.com"
+            },
+            "Ejemplo carta modelo.pdf-page_2.jpg": {
+                "Salida esperada": "Es carta modelo",
+                "Explicación": "El documento cumple con los 4 grupos importantes que definen una carta modelo: \n                1. Se menciona la fecha y lugar de redacción: '15.01.2025' y 'Macacha Güemes 515, 1106 Capital Federal'.\n                2. Contiene el texto inicial con el mensaje 'dichas retenciones no se computaron ni se computarán'.\n                3. Incluye un listado con datos de facturación, como números de documentos, fechas y montos retenidos.\n                4. Al pie de página, se encuentra la firma del proveedor que redacta la carta: 'GOMEZ, CHRISTIAN SEBASTIAN, Gte. Administración de Egresos'.",
+                "Razón social y CUIT del proveedor": {
+                    "Razón social": "BE SINGULAR S.A.",
+                    "CUIT": "30-71177044-1"
+                },
+                "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago": [
+                    "A-0008-00000148",
+                    "A-0008-00000149",
+                    "A-0008-00000147"
+                ],
+                "Fecha en que fue realizada la retención": "17.12.2024",
+                "Impuesto o tasa correspondiente a dicha retención": "IVA",
+                "Retención aplicada por": "RET IVA PROD EDITL- LOCAC ESPA",
+                "Razón social de la empresa del grupo YPF que aplicó la retención": "YPF S.A.",
+                "Lugar en donde presentó la factura que dio lugar a la retención": "Macacha Güemes 515, 1106 Capital Federal"
+            },
+            "Test/30707248757-00008A00014432.pdf-page_1.jpg": {
+                "Salida esperada": "No es carta modelo",
+                "Explicación": "El documento proporcionado es una factura y no cumple con el patrón de los 4 grupos detallados para una 'Carta Modelo'. No se identifica un texto inicial con el mensaje 'dichas retenciones no se computaron ni se computarán', ni un listado específico de datos de facturación relacionado con retenciones, ni una firma al pie de página que indique que es una carta redactada por un proveedor.",
+                "Razón social y CUIT del proveedor": "Vacío",
+                "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago": "Vacío",
+                "Fecha en que fue realizada la retención": "Vacío",
+                "Impuesto o tasa correspondiente a dicha retención": "Vacío",
+                "Razón social de la empresa del grupo YPF que aplicó la retención": "Vacío",
+                "Lugar en donde presentó la factura que dio lugar a la retención": "Vacío"
+            },
+            "Test/30707248757-00008A00014432.pdf-page_2.jpg": {
+                "Salida esperada": "No es carta modelo",
+                "Explicación": "El documento presentado no cumple con el patrón de los 4 grupos detallados para ser considerado una 'Carta Modelo'. No se observa un formato de carta con fecha y lugar de redacción, ni un texto inicial que contenga el mensaje 'dichas retenciones no se computaron ni se computarán'. Además, no hay un listado explícito de datos de facturación en el contexto de una carta, ni una firma al pie de página del proveedor que redacta la carta. El documento parece ser un listado de datos de facturación o un informe técnico, pero no una carta modelo.",
+                "Razón social y CUIT del proveedor": "Vacío",
+                "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago": "Vacío",
+                "Fecha en que fue realizada la retención": "Vacío",
+                "Impuesto o tasa correspondiente a dicha retención": "Vacío",
+                "Razón social de la empresa del grupo YPF que aplicó la retención": "Vacío",
+                "Lugar en donde presentó la factura que dio lugar a la retención": "Vacío"
+            },
+            "Test/Nota modelo-Devolución de Retenciones2000091532.pdf-page_1.jpg": {
+                "Salida esperada": "Es carta modelo",
+                "Explicación": "El documento cumple con los 4 grupos importantes que definen una carta modelo:\n                1. Se menciona la fecha y lugar de redacción: 'Lugar y fecha 23.10.2024'.\n                2. Contiene el texto inicial con el mensaje 'dichas retenciones no se computaron ni se computarán'.\n                3. Incluye un listado con datos de facturación bajo el título 'Detalles de la retención'.\n                4. Al pie de página, se encuentra la firma del proveedor que redacta la carta.",
+                "Razón social y CUIT del proveedor": {
+                    "Razón social": "CLARIANT ARGENTINA SA",
+                    "CUIT": "30594623416"
+                },
+                "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago": "2000091532",
+                "Fecha en que fue realizada la retención": "23.10.2024",
+                "Impuesto o tasa correspondiente a dicha retención": "IIBB Neuquén",
+                "Razón social de la empresa del grupo YPF que aplicó la retención": "YPF S.A.",
+                "Lugar en donde presentó la factura que dio lugar a la retención": "facturacion@proveedoresypf.com"
+            }
+        }
+    ]
+}

@@ -1,12 +1,16 @@
+import json
 import logging
-from typing import Literal
+from typing import Literal, Sequence
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START, END
 from agentiacap.agents.agentCleaner import cleaner
 from agentiacap.agents.agentClassifier import classifier
 from agentiacap.agents.agentExtractor import extractor
+from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
+from agentiacap.tools.document_intelligence import ImageFieldExtractor
 from agentiacap.utils.globals import InputSchema, OutputSchema, MailSchema, relevant_categories, lista_sociedades
 from agentiacap.llms.llms import llm4o_mini
+from agentiacap.workflows.responser import responder_mail_retenciones
 
 # Configuración del logger
 logging.basicConfig(level=logging.INFO)
@@ -20,12 +24,14 @@ async def call_cleaner(state: InputSchema) -> MailSchema:
         logger.error(f"Error en 'call_cleaner': {str(e)}")
         raise
 
-async def call_classifier(state: MailSchema) -> Command[Literal["Extractor", "Output"]]:
+async def call_classifier(state: MailSchema) -> Command[Literal["Extractor", "DevRetenciones", "Output"]]:
     try:
         input_schema = InputSchema(asunto=state["asunto"], cuerpo=state["cuerpo"], adjuntos=state["adjuntos"])
         classified_result = await classifier.ainvoke(input_schema)
         if classified_result["category"] in relevant_categories:
             goto = "Extractor"
+        elif classified_result["category"] == "Pedido devolución retenciones":
+            goto = "DevRetenciones"
         else:
             goto = "Output"
         return Command(
@@ -43,6 +49,32 @@ async def call_extractor(state: MailSchema) -> MailSchema:
         return {"extracciones": extracted_result["extractions"], "tokens": extracted_result["tokens"]}
     except Exception as e:
         logger.error(f"Error en 'call_extractor': {str(e)}")
+        raise
+
+async def DevRetencionesNode(state:MailSchema) -> MailSchema:
+    try:
+        images_from_pdfs = []
+        for file in state["adjuntos"]:
+            file_name = file["file_name"]
+            if file_name.endswith(".pdf"):
+                content = file.get("content", b"")
+                pages = pdf_binary_to_images_base64(content, dpi=300)
+                for page in pages:
+                    page_name = page["file_name"]
+                    image = {
+                        "file_name": f"{file_name}-{page_name}",
+                        "content": page["content"]
+                    }
+                    images_from_pdfs.append(image)
+        if images_from_pdfs:
+            extractor = ImageFieldExtractor()
+            result = extractor.es_carta_modelo(base64_images=images_from_pdfs)
+        else:
+            result = []
+
+        return {"extracciones": result}
+    except Exception as e:
+        logger.error(f"Error en 'DevRetencionesNode': {str(e)}")
         raise
 
 def output_node(state: MailSchema) -> OutputSchema:
@@ -167,17 +199,31 @@ def output_node(state: MailSchema) -> OutputSchema:
     try:
         print("Terminando respuesta...")
         category = state.get("categoria", "Desconocida")
-
+        is_missing_data = False
         if category not in relevant_categories:
-            result = {
-                "category": category,
-                "extractions": [],
-                "tokens": 0,
-                "resume": {},
-                "is_missing_data": False,
-                "message": ""
-            }
-            return {"result": result}
+            if category == "Pedido devolución retenciones":
+                extractions = state.get("extracciones", [])
+                message = responder_mail_retenciones(extractions)
+                if message: is_missing_data = True
+                result = {
+                    "category": category,
+                    "extractions": state.get("extracciones", []),
+                    "tokens": 0,
+                    "resume": {},
+                    "is_missing_data": is_missing_data,
+                    "message": message
+                }
+                return {"result": result}
+            else:
+                result = {
+                    "category": category,
+                    "extractions": state.get("extracciones", []),
+                    "tokens": 0,
+                    "resume": {},
+                    "is_missing_data": False,
+                    "message": ""
+                }
+                return {"result": result}
         
         resume = generar_resumen(state) 
         print("Resumen generado...", resume)
@@ -204,18 +250,19 @@ def output_node(state: MailSchema) -> OutputSchema:
         raise
 
 
-
 # Workflow principal
 builder = StateGraph(MailSchema, input=InputSchema, output=OutputSchema)
 
 builder.add_node("Cleaner", call_cleaner)
 builder.add_node("Classifier", call_classifier)
 builder.add_node("Extractor", call_extractor)
+builder.add_node("DevRetenciones", DevRetencionesNode)
 builder.add_node("Output", output_node)
 
 builder.add_edge(START, "Cleaner")
 builder.add_edge("Cleaner", "Classifier")
 builder.add_edge("Extractor", "Output")
+builder.add_edge("DevRetenciones", "Output")
 builder.add_edge("Output", END)
 
 graph = builder.compile()

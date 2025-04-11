@@ -1,34 +1,13 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "C/C++ Runner: Debug Session",
-      "type": "cppdbg",
-      "request": "launch",
-      "args": [],
-      "stopAtEntry": false,
-      "externalConsole": true,
-      "cwd": "d:/Python/agents",
-      "program": "d:/Python/agents/build/Debug/outDebug",
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
-      "setupCommands": [
+    "version": "0.2.0",
+    "configurations": [
         {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
-      ]
-    },
-    {
-      "name": "Attach to Python Functions",
-      "type": "debugpy",
-      "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 9091
-      },
-      "preLaunchTask": "func: host start"
-    }
-  ]
+    ]
 }

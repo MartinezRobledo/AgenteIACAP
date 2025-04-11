@@ -99,6 +99,10 @@ lista_sociedades = [
     {'Nombre Soc SAP': 'MOBIL ARGENTINA S.A.', 'Código SAP': '1619', 'Estado': 'Activa', 'CUIT': '30658473499', 'Nombre en AFIP': 'MOBIL ARGENTINA SOCIEDAD ANONIMA'}
 ]
 
+socs = [soc["Nombre Soc SAP"] for soc in lista_sociedades] + [soc["Nombre en AFIP"] for soc in lista_sociedades]
+cods_soc = [soc["Código SAP"] for soc in lista_sociedades]
+cuits = [soc["CUIT"] for soc in lista_sociedades]
+
 relevant_categories = [
     "Estado de facturas", 
     # "Pedido devolución retenciones", 

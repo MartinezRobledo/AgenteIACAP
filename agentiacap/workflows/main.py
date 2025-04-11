@@ -115,10 +115,11 @@ def output_node(state: MailSchema) -> OutputSchema:
                             for page in document_data:
                                 invoice_id = page["fields"].get("InvoiceId", None)
                                 invoice_date = page["fields"].get("InvoiceDate", None)
+                                invoice_total = page["fields"].get("InvoiceTotal", None)
                                         
                                 if invoice_id and invoice_id not in ids_vistos:
                                     if invoice_id not in nulos and invoice_date not in nulos:
-                                        facturas.append({"ID": invoice_id, "Fecha": invoice_date})
+                                        facturas.append({"Factura": invoice_id, "Fecha": invoice_date, "Monto": invoice_total})
                                         ids_vistos.add(invoice_id)
 
         for extraccion in extractions:
@@ -131,14 +132,17 @@ def output_node(state: MailSchema) -> OutputSchema:
                         for page in document_data:
                             invoice_id = page["fields"].get("InvoiceId", [])
                             invoice_date = page["fields"].get("InvoiceDate", [])  
+                            invoice_total = page["fields"].get("InvoiceTotal", [])  
                             # Itero segun la lista con mas elementos
                             if not invoice_id: invoice_id = []
                             if not invoice_date: invoice_date = []
-                            max_length = max(len(invoice_id), len(invoice_date))
+                            if not invoice_total: invoice_total = []
+                            max_length = max(max(len(invoice_id), len(invoice_date)), len(invoice_total))
                             for i in range(max_length):
                                 invoice = invoice_id[i] if i < len(invoice_id) else ""
                                 fecha = invoice_date[i] if i < len(invoice_date) else ""
-                                facturas.append({"ID": invoice, "Fecha": fecha})
+                                monto = invoice_total[i] if i < len(invoice_total) else ""
+                                facturas.append({"Factura": invoice, "Fecha": fecha, "Monto": monto})
 
         return facturas
 
@@ -168,6 +172,18 @@ def output_node(state: MailSchema) -> OutputSchema:
         falta_factura = not resume.get("Facturas")
 
         return falta_campo_requerido or falta_factura
+    
+    def faltan_datos_requeridos_op_ret(resume):
+        
+        required_fields = ["CUIT", "Sociedad"]
+        
+        # Verifica si falta algún campo requerido o está vacío
+        falta_campo_requerido = any(not resume.get(field) for field in required_fields)
+
+        # Verifica si no hay fecha de trasferencia
+        falta_fecha = not [f["Fecha"] for f in resume["Facturas"] if f["Fecha"] != '']
+
+        return falta_campo_requerido or falta_fecha
 
     def generate_message(cuerpo, resume):
         response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
@@ -177,12 +193,10 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 Estimado, 
                                 
                                 Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
-                                CUIT
-                                Sociedad de YPF a la que se facturó
-                                Facturas (recordá mencionarlas con su numero completo 9999A99999999)
-                                Montos
+                                <Lista los valores de la siguiente lista (solamente lo valores de la lista, no infieras datos que no esten en la lista): {resume.keys()}. Si algun valor de esa lista es igual a 'Facturas' agrega debajo el detalle: *Facturas (recordá mencionarlas con su numero completo 9999A99999999). Si en la lista no hay un valor 'Facturas' no agregues este detalle>
+                                
                                 De tu consulta pudimos obtener la siguiente información:
-                                <formatear el input para que sea legible y mantenga la manera de escribir que se viene usando en el mail. No mencionar fechas. Listar los campos de forma legible>
+                                <formatear el siguiente diccionario para que sea legible y mantenga la manera de escribir que se viene usando en el mail.>
                                 {resume}
                                 
                                 En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
@@ -195,6 +209,60 @@ def output_node(state: MailSchema) -> OutputSchema:
                                 -No generes un saludo de despedida ni una firma.
                                  """)
         return response.content
+    
+    def clasificar_extraccion_retenciones(data):
+        resultado = {
+            "nota_modelo": [],
+            "certificado_retenciones": []
+        }
+
+        for item in data:
+            info = {
+                "file_name": item["file_name"],
+                "firmada": item["firmada"],
+                "datos_completos": item["datos_completos"],
+                "datos": item["datos"]
+            }
+
+            if item.get("es_nota_modelo"):
+                resultado["nota_modelo"].append(info)
+            elif item.get("es_certificado_retenciones"):
+                resultado["certificado_retenciones"].append(info)
+
+        return resultado
+
+    def validar_extracciones_retenciones(clasificado):
+        notas = clasificado.get("nota_modelo", [])
+        certificados = clasificado.get("certificado_retenciones", [])
+
+        notas_completas = [n["file_name"] for n in notas if n["datos_completos"]]
+        notas_incompletas = [n["file_name"] for n in notas if not n["datos_completos"]]
+
+        certificados_completos = [c["file_name"] for c in certificados if c["datos_completos"]]
+        certificados_incompletos = [c["file_name"] for c in certificados if not c["datos_completos"]]
+
+        # Buscar proveedor y CUIT
+        fuente_valida = next(
+            (n for n in notas if n["datos_completos"]),
+            next((c for c in certificados if c["datos_completos"]), None)
+        )
+        proveedor = fuente_valida["datos"]["nombre_proveedor"] if fuente_valida else ""
+        cuit = fuente_valida["datos"]["CUIT_proveedor"] if fuente_valida else ""
+
+        resultado = {
+            "hay_nota_modelo": bool(notas),
+            "hay_certificado_retenciones": bool(certificados),
+            "certificados_completos": len(certificados_incompletos) == 0 and bool(certificados),
+            "notas_modelo_completas": notas_completas,
+            "notas_modelo_incompletas": notas_incompletas,
+            "certificados_completos": certificados_completos,
+            "certificados_incompletos": certificados_incompletos,
+            "proveedor": proveedor,
+            "cuit": cuit
+        }
+
+        return resultado
+
 
     try:
         print("Terminando respuesta...")
@@ -203,13 +271,20 @@ def output_node(state: MailSchema) -> OutputSchema:
         if category not in relevant_categories:
             if category == "Pedido devolución retenciones":
                 extractions = state.get("extracciones", [])
-                message = responder_mail_retenciones(extractions)
-                if message: is_missing_data = True
+                clasificado = clasificar_extraccion_retenciones(extractions)
+                resume = validar_extracciones_retenciones(clasificado)
+                message = responder_mail_retenciones(resume, extractions)
+                is_missing_data = (
+                    bool(resume["notas_modelo_incompletas"]) 
+                    or bool(resume["certificados_incompletos"]) 
+                    or not resume["hay_nota_modelo"] 
+                    or not resume["hay_certificado_retenciones"]
+                )
                 result = {
                     "category": category,
-                    "extractions": state.get("extracciones", []),
+                    "extractions": extractions,
                     "tokens": 0,
-                    "resume": {},
+                    "resume": resume,
                     "is_missing_data": is_missing_data,
                     "message": message
                 }
@@ -225,16 +300,29 @@ def output_node(state: MailSchema) -> OutputSchema:
                 }
                 return {"result": result}
         
-        resume = generar_resumen(state) 
+        resume = generar_resumen(state)
         print("Resumen generado...", resume)
-        is_missing_data = faltan_datos_requeridos(resume)
+        is_missing_data = faltan_datos_requeridos_op_ret(resume)
         message = ""
         if is_missing_data:
-            message = generate_message(state.get("cuerpo"),
-                                       {"CUIT": resume["CUIT"], 
-                                        "Sociedad": resume["Sociedad"],
-                                        "Facturas": resume["Facturas"]
-                                        })
+            if category == "Impresión de OP y/o Retenciones":
+                message = generate_message(state.get("cuerpo"),
+                            {
+                                "CUIT": resume["CUIT"], 
+                                "Sociedad": resume["Sociedad"],
+                                # "Facturas": [f["Factura"] for f in resume["Facturas"]],
+                                "Fecha de transeferencia": [f["Fecha"] for f in resume["Facturas"]],
+                                "Montos": [f["Monto"] for f in resume["Facturas"]]
+                            }
+                        )
+            else:
+                message = generate_message(state.get("cuerpo"),
+                            {
+                                "CUIT": resume["CUIT"], 
+                                "Sociedad": resume["Sociedad"],
+                                "Facturas": [f["Factura"] for f in resume["Facturas"]]
+                            }
+                        )
 
         result = {
             "category": category,

@@ -85,8 +85,8 @@ Muchas gracias por su atención."""
 # 1.	Me pasan nota modelo correcta y retenciones
 ret_caso_1 = """: Estimado proveedor,
 Hemos recibido su pedido de devolución de retenciones mal calculadas, el mismo fue derivado al sector correspondiente para que, en caso de validarlo, dé curso a la devolución.
-Número de caso: [numero de caso] 
-Proveedor: [Cuenta - Nombre de cuenta;} – [Número de cuenta]
+Número de caso: NROCASOPLACEHOLDER 
+Proveedor: NOMPROVPLACEHOLDER – CUITPROVPLACEHOLDER
 No existe un plazo establecido para la devolución de retenciones, debe consultar en la Extranet 10 días hábiles posteriores a la aceptación de la nota emitida a YPF
 Las devoluciones aparecerán en la Extranet como Documentos AK
 Si tiene que informar una exención impositiva, nosotros no podemos gestionarlo, eso lo debe informar siempre a ActualizacionFiscal@proveedoresypf.com 
@@ -168,7 +168,7 @@ ret_caso_5 = """<p>Estimado proveedor,</p>
         <li><strong>Lugar en donde presentó la factura</strong> que dio lugar a la retención erróneamente calculada (si fue por mail, indicar la casilla de correo).</li>
         <li><strong>Firma de un apoderado de la empresa</strong> (firma y sello; si no posee sello, colocar firma y DNI).</li>
     </ul>
-    REPLACE
+    REVISARARCHIVOSPLACEHOLDER
     <p>Atentamente,<br>Equipo de Atención a Proveedores</p>
 """
 
@@ -221,27 +221,49 @@ def responder_mail(datos:list):
     result = json.loads(response.generations[0][0].text.strip())
     return result["final_answer"]
 
-def responder_mail_retenciones(extraccion_retenciones):
+import re
+
+def responder_mail_retenciones(validacion, extracciones_originales):
     msg = ""
 
-    notas = [n for n in extraccion_retenciones if n["es_nota_modelo"]]
-    notas_completas = [n for n in notas if n["datos_completos"]]
-    notas_firmadas = [n for n in notas_completas if n["firmada"]]
+    hay_nota = validacion["hay_nota_modelo"]
+    hay_cert = validacion["hay_certificado_retenciones"]
+    nota_ok = hay_nota and not bool(validacion["notas_modelo_incompletas"])
+    cert_ok = hay_cert and not bool(validacion["certificados_incompletos"])
+    
+    if nota_ok and cert_ok:
+        return ret_caso_1.replace("NOMPROVPLACEHOLDER – CUITPROVPLACEHOLDER", f"{validacion['proveedor']} - {validacion['cuit']}")
 
-    if notas_completas and notas_firmadas: return msg
-    if notas:
-        notas = [n for n in notas if not n["datos_completos"] or not n["firmada"]]
-        archivos = [re.search(r'(?<=/)([^/]+?)(?:-page_\d+)?(?=\.jpg)', n["file_name"]).group() for n in notas]
-        if len(archivos) == 1:
-            replace = f"<br><p>Por favor, revise el archivo adjunto: {archivos[0]}</p>"
-        elif archivos:
-            replace = f"<br><p>Por favor, revise los archivos adjuntos: {' ,'.join(archivos)}</p>"
-        else:
-            replace = ""
+    if not hay_nota and not hay_cert:
+        return ret_caso_2
+    
+    if nota_ok and not hay_cert:
+        return ret_caso_3
 
-        return ret_caso_5.replace("REPLACE", replace)
-        
-    return ret_caso_2
+    if not hay_nota and cert_ok:
+        return ret_caso_4
+
+    # Caso 5: hay nota modelo, pero está incompleta o no firmada
+    notas_con_errores = [
+        n for n in extracciones_originales.get("extractions", [])
+        if n.get("es_nota_modelo") and (not n.get("datos_completos") or not n.get("firmada"))
+    ]
+
+    archivos = [
+        re.search(r'(?<=/)([^/]+?)(?:-page_\d+)?(?=\.jpg)', n["file_name"]).group()
+        for n in notas_con_errores
+        if re.search(r'(?<=/)([^/]+?)(?:-page_\d+)?(?=\.jpg)', n["file_name"])
+    ]
+
+    if len(archivos) == 1:
+        replace = f"<br><p>Por favor, revise el archivo adjunto: {archivos[0]}</p>"
+    elif archivos:
+        replace = f"<br><p>Por favor, revise los archivos adjuntos: {', '.join(archivos)}</p>"
+    else:
+        replace = ""
+
+    return ret_caso_5.replace("REVISARARCHIVOSPLACEHOLDER", replace)
+
 
 
 datos = [

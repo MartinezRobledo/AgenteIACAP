@@ -66,7 +66,10 @@ json_schema_invoices = {
                         "type": ["array", "null"],
                         "items": {"type": "string"}
                     },
-                    "InvoiceTotal": {"type": ["string", "null"]},
+                    "InvoiceTotal": {
+                        "type": ["array", "null"],
+                        "items": {"type": "string"}
+                    },
                     "PurchaseOrderNumber": {"type": ["string", "null"]}
                 },
                 "required": [

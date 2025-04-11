@@ -1,7 +1,19 @@
-import re
+from langchain_openai import AzureChatOpenAI
+from dotenv import load_dotenv
+import os
+from langchain.schema import HumanMessage
+from agentiacap.llms.llms import llm4o
 
-notas = [{"file_name": "Test/Firmas/Nota modelo-Devolución de Retenciones2000091532_signed_Caso 10.pdf-page_1.jpg"}]
 
-archivos = [re.search(r'(?<=/)([^/]+?)(?:-page_\d+)?(?=\.jpg)', n["file_name"]).group() for n in notas]
+load_dotenv()
 
-print(archivos)
+llm = AzureChatOpenAI(
+    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),  # ✅ obligatorio ahora
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),          # ✅ obligatorio ahora
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    temperature=0
+)
+
+response = llm4o([HumanMessage(content="Hola, ¿cómo estás?")])
+print(response.content)

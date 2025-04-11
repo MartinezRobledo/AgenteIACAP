@@ -17,8 +17,9 @@ llm4o_mini = AzureChatOpenAI(
 llm4o = AzureChatOpenAI(
     azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),  
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     temperature=0,
     max_tokens=10000,
-    timeout=None,
     max_retries=2
 )

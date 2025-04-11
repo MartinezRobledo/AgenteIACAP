@@ -16,8 +16,10 @@ from urllib.parse import quote
 
 from agentiacap.workflows.sentiment_validator import sentiment
 
-INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Devolución de retenciones - Casos reales.xlsx"
-OUTPUT_FILE = "D:\\Python\\Agentiacap\\Pruebas - Pedido devolución retenciones - 27032025.xlsx"
+# INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Devolución de retenciones - Casos reales.xlsx"
+INPUT_FILE = "C:\\Users\\Adrián\\Downloads\\Casos respondidos 10-Apr-2025 10-34-58.xlsx"
+# OUTPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Pruebas - Pedido devolución retenciones - 10042025.xlsx"
+OUTPUT_FILE = "C:\\Users\\Adrián\\Downloads\\Casos respondidos 10-Apr-2025 10-34-58-Resultados.xlsx"
 
 load_dotenv()
 
@@ -67,8 +69,8 @@ def obtener_blob_por_url(blob: dict):
 async def process_excel():
     df = pd.read_excel(INPUT_FILE)
     
-    if not {'body'}.issubset(df.columns):
-        raise ValueError("El archivo Excel debe contener las columnas 'body'")
+    if not {'InputData'}.issubset(df.columns):
+        raise ValueError("El archivo Excel debe contener las columnas 'InputData'")
     
     if "Extracción Mail" not in df.columns:
         df["Extracción Mail"] = None
@@ -87,9 +89,9 @@ async def process_excel():
     
     for index, row in df.iterrows():
         try:
-            urls_adjuntos = json.loads(row["body"])["adjuntos"]
-            cuerpo = json.loads(row["body"])["cuerpo"]
-            asunto = json.loads(row["body"])["asunto"]
+            urls_adjuntos = json.loads(row["InputData"])["adjuntos"]
+            cuerpo = json.loads(row["InputData"])["cuerpo"]
+            asunto = json.loads(row["InputData"])["asunto"]
             try:
                 adjuntos = []
                 for file_url in urls_adjuntos:
@@ -100,13 +102,6 @@ async def process_excel():
                         logging.warning(f"No se pudo obtener el archivo desde {file_url}")
             except:
                 return {"error": "Error al obtener archivos del storage."}
-            
-            # for path in [adjuntos_path, adjuntos_path_id]:
-            #     if os.path.exists(path):
-            #         for file_path in glob.glob(os.path.join(path, '*')):
-            #             with open(file_path, "rb") as file:
-            #                 encoded_string = base64.b64encode(file.read()).decode("utf-8")
-            #                 adjuntos_list.append({"file_name": os.path.basename(file_path), "base64_content": encoded_string})
             
             input_data = InputSchema(asunto=asunto, cuerpo=cuerpo, adjuntos=adjuntos)
             response = await graph.ainvoke(input=input_data)
@@ -165,12 +160,16 @@ async def process_excel_devretenciones():
     if not {'InputData'}.issubset(df.columns):
         raise ValueError("El archivo Excel debe contener las columnas 'InputData'")
 
-    if "Extracción" not in df.columns:
-        df["Extracción"] = None
-    if "Categoria inferida" not in df.columns:
-        df["Categoria inferida"] = None
-    if "Sentimiento" not in df.columns:
-        df["Sentimiento"] = None
+    if "Extracción2" not in df.columns:
+        df["Extracción2"] = None
+    if "Categoria inferida2" not in df.columns:
+        df["Categoria inferida2"] = None
+    if "Sentimiento2" not in df.columns:
+        df["Sentimiento2"] = None
+    if "Mensaje" not in df.columns:
+        df["Mensaje"] = None
+    if "Resumen2" not in df.columns:
+        df["Resumen2"] = None
     
     for index, row in df.iterrows():
         try:
@@ -192,21 +191,25 @@ async def process_excel_devretenciones():
             response = await graph.ainvoke(input=input_data)
             result = response.get("result", {})
             category = result.get("category", {})
+            mensaje = result.get("message", {})
             print(f"DEBUG - Categoria obtenida: {category}")
             
             extractions = result.get("extractions", {})
+            resume = result.get("resume", {})
             df.at[index, "Categoria inferida"] = category if category else "No detectada"
             response = await sentiment(subject=asunto, message=cuerpo)    
-            df.at[index, "Extracción"] = extractions
-            df.at[index, "Sentimiento"] = response
+            df.at[index, "Extracción2"] = extractions
+            df.at[index, "Sentimiento2"] = response
+            df.at[index, "Resumen2"] = resume
+            df.at[index, "Mensaje"] = mensaje
             
             df.to_excel(OUTPUT_FILE, index=False)
             print(f"Fila {index} procesada y guardada en Excel.")
             time.sleep(1)
         except Exception as e:
             print(f"Error en fila {index}: {e}")
-            df.at[index, "Extracción"] = e
-            df.at[index, "Categoria inferida"] = "Error"
+            df.at[index, "Extracción2"] = e
+            df.at[index, "Categoria inferida2"] = "Error"
             df.to_excel(OUTPUT_FILE, index=False)
             time.sleep(2)
 
@@ -249,6 +252,6 @@ async def process_json():
 
 
 if __name__ == "__main__":
-    # asyncio.run(process_excel())
+    asyncio.run(process_excel())
     # asyncio.run(process_excel_devretenciones())
-    asyncio.run(process_json())
+    # asyncio.run(process_json())

@@ -18,8 +18,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 import pandas as pd
 
-from agentiacap.utils.globals import Retencion
-#   TODO: EL JSON DEVUELTO POR PROCESS_BASE_64_FILES NO CONTIENE MISSING FIELDS EN SU ESTRUCTURA
+from agentiacap.utils.globals import cods_soc, socs, cuits, lista_sociedades
 
 class SapReg(BaseModel):
 
@@ -634,29 +633,87 @@ class ImageFieldExtractor:
                 messages = [
                     {
                         "role": "system", 
-                        "content": """Eres un asistente experto en reconocer un tipo de documento llamado "Carta Modelo".
-                        Este documento tiene formato de carta en la cual se reconocen 4 grupos importantes:
-                        1-Se menciona fecha y lugar de la redacción como en toda carta.
-                        2-Tiene un texto inicial que debe contener el mensaje "dichas retenciones no se computaron ni se computarán". En caso de no mencionar la expresión textual se descarta como carta modelo si importar el resto de grupos.
-                        3-Luego del texto inicial contiene un listado con datos de facturación de los cuales se debe mencionar: "Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago", "Fecha en que fue realizada la retención", "Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc)", "Razón social de la empresa del grupo YPF que aplicó la retención", "Lugar en donde presentó la factura que dio lugar a la retención (seguramente sea una dirección de mail)". Si el listado de facturacion menciona otros datos descarta el documento como carta modelo sin importar los otros grupos.
-                        4-Por último contiene al pie de página la firma del proveedor que redacta la carta. Se debe reconocer la firma manuscrita realizada por una persona. Si no contiene la firma pero si el resto de grupos indica que es una carta modelo sin firmar.
+                        "content": f"""
+                                Eres un asistente experto en reconocer dos tipos de documentos: "Carta Modelo" y "Certificado de Retenciones".
 
-                        **Salida esperada:**
-                        -En caso de reconocer que sea una carta modelo indica:
-                            * Indica como verdadero "Es nota modelo" y brinda una explicación del por que reconoces el documento como tal.
-                            * Razón social y CUIT del proveedor
-                            * Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago
-                            * Fecha en que fue realizada la retención.
-                            * Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc). En caso de que la misma sea aplicada por Ingresos Brutos, especificar a qué provincia corresponde la retención.
-                            * Razón social de la empresa del grupo YPF que aplicó la retención
-                            * Lugar en donde presentó la factura que dio lugar a la retención (seguramente sea una dirección de mail)
-                            * Indica como verdadero si está firmada.
-                            * Si pudiste completar todos los datos pedidos, indica como verdadero "Datos completos".
+                                Primero debes analizar el contenido del documento y clasificarlo como uno de los siguientes:
+                                - Carta Modelo
+                                - Certificado de Retenciones
+                                - Documento No Reconocido
 
+                                ### Criterios para reconocer una "Carta Modelo":
+                                Este documento tiene formato de carta en la cual se reconocen 4 grupos importantes:
 
-                        -En caso de no reconocer el patrón de los 4 grupos detallados devolve:
-                            * "No es carta modelo" y brinda una explicación del por que no pudiste reconocer el documento como tal.
-                            * Completa con un string vacío el resto de campos obligatorios.
+                                1. Se menciona fecha y lugar de la redacción como en toda carta.
+
+                                2. Tiene un texto inicial que debe contener el mensaje: **"dichas retenciones no se computaron ni se computarán"**.  
+                                En caso de no mencionar esa expresión textual, **descarta como carta modelo sin importar el resto de los grupos.**
+
+                                3. Luego del texto inicial contiene un listado con datos de facturación, los cuales deben mencionar todos los siguientes campos:
+                                - Número completo de la factura a la cual se le aplicó la retención o número de Orden de Pago.
+                                - Fecha en que fue realizada la retención.
+                                - Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc).
+                                - Razón social de la empresa del grupo YPF que aplicó la retención.
+                                - Lugar en donde presentó la factura que dio lugar a la retención (seguramente sea una dirección de mail).  
+                                Si el listado de facturación menciona otros datos distintos a los mencionados, **descarta el documento como carta modelo.**
+
+                                4. Al pie de página contiene la firma y aclaración del proveedor que redacta la carta.
+                                - Se debe reconocer la **firma manuscrita** realizada por una persona.
+                                - **Importante:** No debe considerarse como firma cualquier trazo o marca manuscrita aislada.
+                                - Para que una firma sea considerada válida, **debe estar asociada directamente con una aclaración** que incluya el **nombre completo y el cargo del firmante.**
+                                - Si hay una marca manuscrita pero no tiene aclaración, **no debe tomarse como firma**.
+                                - Si hay aclaración sin firma manuscrita, considerar que se trata de una **carta modelo sin firmar**.
+
+                                ---
+
+                                ### Criterios para reconocer un "Certificado de Retenciones":
+                                Este documento está dividido claramente en **cuatro secciones horizontales separadas por líneas**. Cada sección cumple una función específica:
+
+                                1. **Primera sección (superior):** Datos de la sociedad o cliente.  
+                                - La información está organizada en **dos columnas**.
+                                - A la izquierda suele estar el **nombre de la sociedad** y su **dirección**.
+                                - A la derecha puede estar el **CUIT**, la **paginación** u otros datos similares.  
+                                - El orden puede variar, pero **siempre debe haber dos columnas con datos de la sociedad.**
+
+                                2. **Segunda sección (debajo):** Datos del proveedor.  
+                                - También estructurados en **dos columnas**, al igual que los de la sociedad.
+
+                                3. **Tercera sección:** Datos de facturación.  
+                                - Se encuentra debajo de los datos del proveedor.
+                                - Puede estar en formato de **lista o tabla**, con información como número de factura, fecha, impuesto retenido, etc.
+
+                                4. **Cuarta sección (abajo de todo):** Totales.  
+                                - Contiene el **monto total** retenido u otro resumen numérico.
+
+                                ---
+                                **Lista de sociedades permitidas:**
+                                {lista_sociedades}
+                                ---
+                                ### Salida esperada:
+
+                                - Si reconoces que el documento es una **Carta Modelo**, devuelve:
+                                * `"Es nota modelo": true`
+                                * `"Es certificado de retenciones": false`
+                                * Razón social y CUIT del proveedor
+                                * Fecha en que fue realizada la retención
+                                * Razón social (sociedad) de la empresa del grupo YPF:
+                                    - Utilizar alguno de los datos encontrados en el documento y autocompletar el resto filtrando con ese dato en la lista de sociedades permitidas.
+                                * Lugar donde se presentó la factura
+                                * `"Firmada": true/false`
+                                * `"Datos completos": true/false`
+
+                                - Si reconoces que es un **Certificado de Retenciones**, devuelve:
+                                * `"Es nota modelo": false`
+                                * `"Es certificado de retenciones": true`
+                                * Datos de la sociedad:
+                                    - Utilizar alguno de los datos encontrados en el documento y autocompletar el resto filtrando con ese dato en la lista de sociedades permitidas.
+                                * Total retenido (si está presente)
+                                * Fecha del encabezado.
+
+                                - Si no es ninguno de los dos documentos:
+                                * `"Es nota modelo": false`
+                                * `"Es certificado de retenciones": false`
+                                * `"Documento no reconocido"` con una explicación de por qué no encaja en ninguno de los formatos.
                         """
                     },
                     {
@@ -683,11 +740,25 @@ class ImageFieldExtractor:
                                     "type": "object",
                                     "properties": {
                                         "es_nota_modelo": {"type": "boolean"},
-                                        "datos": {"type": ["string", "null"]},
+                                        "es_certificado_retenciones": {"type": "boolean"},
+                                        "datos": {
+                                            "type": "object",
+                                            "properties": {
+                                                "CUIT_proveedor": {"type": "string"},
+                                                "CUIT_sociedad": {"type": "string", "enum": cuits},
+                                                "nombre_proveedor": {"type": "string"},
+                                                "nombre_sociedad": {"type": "string", "enum": socs},
+                                                "codigo_sociedad": {"type": "string", "enum": cods_soc},
+                                                "total": {"type": "string"},
+                                                "fecha": {"type": "string"}
+                                            },
+                                            "required": ["CUIT_proveedor", "CUIT_sociedad", "nombre_proveedor", "nombre_sociedad", "codigo_sociedad", "total", "fecha"],
+                                            "additionalProperties": False
+                                        },
                                         "datos_completos": {"type": "boolean"},
                                         "firmada": {"type": "boolean"}
                                     },
-                                    "required": ["es_nota_modelo", "datos", "datos_completos", "firmada"],
+                                    "required": ["es_nota_modelo", "es_certificado_retenciones", "datos", "datos_completos", "firmada"],
                                     "additionalProperties": False
                                 }
                             }

@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import quote
 
-from agentiacap.tools.op_data_extractor import ExtractSAP
+from agentiacap.tools.busqueda_sap import SAP_buscar_por_factura, SAP_buscar_por_fecha_monto, SAP_buscar_por_fecha_base, procesar_solicitud_busqueda_sap
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
@@ -59,11 +59,10 @@ def obtener_blob_por_url(blob: dict):
         raise
 
 async def ExtractionSap(req: dict) -> dict:
-    logging.info("Python activity function processed a request.")
 
     try:
-        inputs = req["facturas"]
-        urls_adjuntos = req["adjuntos"]
+        inputs = req["inputs"]
+        urls_adjuntos = req["files"]
 
     except Exception as e:
         return {"error": f"Body no válido. Error: {e}"}
@@ -86,12 +85,13 @@ async def ExtractionSap(req: dict) -> dict:
         return {"error": f"Error al obtener archivos del storage. Error: {e}"}
 
     try:
-        response = await ExtractSAP(adjuntos, inputs)
+        for file in adjuntos:
+            response = await procesar_solicitud_busqueda_sap(file, inputs)
     except Exception as e:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
         return {"error": f"Error al procesar la solicitud. Error: {e}"}
 
-    return response.get("extractions", {})
+    return response
 
 
 # Obtiene la ruta absoluta del archivo 'caso.json' en relación con el script actual

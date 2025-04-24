@@ -83,15 +83,39 @@ Muchas gracias por su atención."""
 
 # Casos devolución de retenciones
 # 1.	Me pasan nota modelo correcta y retenciones
-ret_caso_1 = """: Estimado proveedor,
-Hemos recibido su pedido de devolución de retenciones mal calculadas, el mismo fue derivado al sector correspondiente para que, en caso de validarlo, dé curso a la devolución.
-Número de caso: NROCASOPLACEHOLDER 
-Proveedor: NOMPROVPLACEHOLDER – CUITPROVPLACEHOLDER
-No existe un plazo establecido para la devolución de retenciones, debe consultar en la Extranet 10 días hábiles posteriores a la aceptación de la nota emitida a YPF
-Las devoluciones aparecerán en la Extranet como Documentos AK
-Si tiene que informar una exención impositiva, nosotros no podemos gestionarlo, eso lo debe informar siempre a ActualizacionFiscal@proveedoresypf.com 
-Recuerde hacer el seguimiento de sus facturas y pagos a través de la Extranet de Proveedores.
-Cuando necesite actualizar su CBU, recuerde que puede hacerlo a ingresando a la Extranet de Proveedores y efectuarlo allí de forma rápida y segura.
+ret_caso_1 = """<html>
+    <p>Estimado proveedor,</p>
+
+    <p>
+      Hemos recibido su pedido de devolución de retenciones mal calculadas. El mismo fue derivado al sector correspondiente para que, en caso de validarlo, dé curso a la devolución.
+    </p>
+
+    <p>
+      <strong>Número de caso:</strong> NROCASOPLACEHOLDER<br>
+      <strong>Proveedor:</strong> NOMPROVPLACEHOLDER – CUITPROVPLACEHOLDER
+    </p>
+
+    <p>
+      No existe un plazo establecido para la devolución de retenciones. Debe consultar en la Extranet 10 días hábiles posteriores a la aceptación de la nota emitida a YPF.
+    </p>
+
+    <p>
+      Las devoluciones aparecerán en la Extranet como <strong>Documentos AK</strong>.
+    </p>
+
+    <p>
+      Si tiene que informar una exención impositiva, le recordamos que nosotros no podemos gestionarlo. Eso debe informarlo siempre a:<br>
+      <a href="mailto:ActualizacionFiscal@proveedoresypf.com">ActualizacionFiscal@proveedoresypf.com</a>
+    </p>
+
+    <p>
+      Recuerde hacer el seguimiento de sus facturas y pagos a través de la Extranet de Proveedores.
+    </p>
+
+    <p>
+      Cuando necesite actualizar su CBU, recuerde que puede hacerlo ingresando a la Extranet de Proveedores y efectuarlo allí de forma rápida y segura.
+    </p>
+</html>
 """
 
 # 2. No me pasan nota modelo ni retenciones
@@ -136,22 +160,66 @@ ret_caso_3 = """"""
 #Podemos solicitar y volver a reclamar el envio de las retenciones o descargar por nuestros medios a partir de la información que nos proporciona la nota modelo. 
 
 # 4.	me pasan solo retenciones
-ret_caso_4 = """Estimado proveedor, 
+ret_caso_4 = """<html>
+    <p>Estimado proveedor,</p>
 
-Recordamos que nos debe enviar lo siguiente para que podamos dar curso al pedido de devolución de retenciones:
-Nota solicitando la devolución de retenciones practicadas erróneamente, que contenga la siguiente información:
-•	Leyenda: No se computó ni se computará la retención (si omite esta leyenda no se dará curso a la devolución)
-•	Razón social y CUIT del proveedor
-•	Número de Orden de Pago o, en su defecto, de las facturas afectadas.
-•	Fecha en que fue realizada la retención. 
-•	Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc)
-•	En caso de que la retención sea aplicada por Ingresos Brutos, especificar a qué provincia corresponde la retención.
-•	Razón social de la empresa del grupo YPF que aplicó la retención
-•	Lugar en donde presentó la factura que dio lugar a la retención erróneamente calculada (si fue por mail indicar la casilla de mail)
-•	Firma de algún apoderado de la Empresa (firma y sello, sino posee sello colocar firma y DNI).
-Se adjunta nota modelo como referencia.
-Enviar junto con las retenciones en un mismo archivo PDF. 
-De no contar con toda la documentación descripta anteriormente, NO se dará curso al reclamo.
+    <p>
+      Hemos recibido su pedido de devolución de retenciones mal calculadas. El mismo fue derivado al sector correspondiente para que, en caso de validarlo, dé curso a la devolución.
+    </p>
+
+    <p>
+      <strong>Número de caso:</strong> NROCASOPLACEHOLDER<br>
+      <strong>Proveedor:</strong> NOMPROVPLACEHOLDER – CUITPROVPLACEHOLDER
+    </p>
+
+    <p>
+      No existe un plazo establecido para la devolución de retenciones. Debe consultar en la Extranet 10 días hábiles posteriores a la aceptación de la nota emitida a YPF.
+    </p>
+
+    <p>
+      Las devoluciones aparecerán en la Extranet como <strong>Documentos AK</strong>.
+    </p>
+
+    <p>
+      Si tiene que informar una exención impositiva, le recordamos que nosotros no podemos gestionarlo. Eso debe informarlo siempre a:<br>
+      <a href="mailto:ActualizacionFiscal@proveedoresypf.com">ActualizacionFiscal@proveedoresypf.com</a>
+    </p>
+
+    <p>
+      Recuerde hacer el seguimiento de sus facturas y pagos a través de la Extranet de Proveedores.
+    </p>
+
+    <p>
+      Cuando necesite actualizar su CBU, recuerde que puede hacerlo ingresando a la Extranet de Proveedores y efectuarlo allí de forma rápida y segura.
+    </p>
+
+    <hr>
+
+    <p>Estimado proveedor,</p>
+
+    <p>
+      Recordamos que nos debe enviar lo siguiente para que podamos dar curso al pedido de devolución de retenciones:
+    </p>
+
+    <p>Nota solicitando la devolución de retenciones practicadas erróneamente, que contenga la siguiente información:</p>
+    <ul>
+      <li><strong>Leyenda:</strong> "No se computó ni se computará la retención" (si omite esta leyenda no se dará curso a la devolución)</li>
+      <li>Razón social y CUIT del proveedor</li>
+      <li>Número de Orden de Pago o, en su defecto, de las facturas afectadas</li>
+      <li>Fecha en que fue realizada la retención</li>
+      <li>Impuesto o tasa correspondiente a dicha retención (IVA, Ganancias, Ingresos Brutos, SUSS, etc)</li>
+      <li>En caso de que la retención sea aplicada por Ingresos Brutos, especificar a qué provincia corresponde la retención</li>
+      <li>Razón social de la empresa del grupo YPF que aplicó la retención</li>
+      <li>Lugar en donde presentó la factura que dio lugar a la retención erróneamente calculada (si fue por mail indicar la casilla de mail)</li>
+      <li>Firma de algún apoderado de la Empresa (firma y sello; si no posee sello, colocar firma y DNI)</li>
+    </ul>
+
+    <p>Se adjunta nota modelo como referencia.</p>
+
+    <p>Enviar junto con las retenciones en un mismo archivo PDF.</p>
+
+    <p><strong>De no contar con toda la documentación descripta anteriormente, NO se dará curso al reclamo.</strong></p>
+</html>
 """
 
 # 5.	Me pasan nota modelo incorrecta y retenciones
@@ -168,7 +236,7 @@ ret_caso_5 = """<p>Estimado proveedor,</p>
         <li><strong>Lugar en donde presentó la factura</strong> que dio lugar a la retención erróneamente calculada (si fue por mail, indicar la casilla de correo).</li>
         <li><strong>Firma de un apoderado de la empresa</strong> (firma y sello; si no posee sello, colocar firma y DNI).</li>
     </ul>
-    REVISARARCHIVOSPLACEHOLDER
+    <p>REVISARARCHIVOSPLACEHOLDER</p>
     <p>Atentamente,<br>Equipo de Atención a Proveedores</p>
 """
 

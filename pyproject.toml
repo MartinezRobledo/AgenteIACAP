@@ -1,6 +1,6 @@
 [project]
 name = "agentiacap"
-version = "0.1.21"
+version = "0.1.23"
 description = ""
 authors = [
     {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},
@@ -27,6 +27,7 @@ dependencies = [
     "fastapi (>=0.115.8,<0.116.0)",
     "azure-functions-durable (>=1.2.10,<2.0.0)",
     "langchain-community (>=0.3.19,<0.4.0)",
+    "azure-ai-formrecognizer (>=3.3.3,<4.0.0)",
 ]
 
 

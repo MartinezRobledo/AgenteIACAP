@@ -1,4 +1,5 @@
 import base64
+import datetime
 import operator
 import json
 import logging
@@ -178,9 +179,6 @@ class Fields(TypedDict):
     InvoiceDate:list
     InvoiceTotal:list
 
-
-
-
 def asignar_codigo_sap(datos_facturas, empresas):
     """
     Agrega el 'Código SAP' a cada factura si encuentra coincidencia en 'CustomerName' o 'CustomerTaxId'.
@@ -277,7 +275,6 @@ class ImageNode:
             logger.error(f"Error en 'ImageNode': {str(e)}")
             raise
 
-
 class PrebuiltNode:
     async def __call__(self, state: State) -> State:
         print(f"DEBUG-Prebuilt")
@@ -289,7 +286,6 @@ class PrebuiltNode:
         except Exception as e:
             logger.error(f"Error en 'PrebuiltNode': {str(e)}")
             raise
-
 
 class NamesAndCuitsNode:
     async def __call__(self, state: State) -> Fields:
@@ -322,7 +318,7 @@ class InvoiceNode:
                 {"role": "system", 
                  "content": TextExtractorPrompt.invoice_id_prompt},
                  {"role": "user",
-                  "content": f"Dado el siguiente texto de un mail extrae los datos pedidos: {state['text']}"}
+                  "content": f"Dado el siguiente texto de un mail extrae los datos pedidos: {state['text']}."}
             ]
             result = llm4o.generate(
                 messages=[prompt], 

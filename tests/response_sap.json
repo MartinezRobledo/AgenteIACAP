@@ -1,3 +1,10 @@
-{
-    "error": "Error al procesar la solicitud. Error: {'error': \"La columna [5] 'Referencia' no existe en la tabla.\"}"
-}
+[
+    {
+        "sub-category": "Facturas no encontradas",
+        "fields": {
+            "Factura": "0004A00003606",
+            "Fecha": "27-03-2025",
+            "Monto": "25,163.59"
+        }
+    }
+]

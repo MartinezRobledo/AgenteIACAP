@@ -14,7 +14,7 @@ classification = classifier_definition | llm4o
 llm_with_tools = reflection_definition | llm4o.bind_tools([evaluar_contexto])
 
 class OutputState(TypedDict):
-    category:Annotated[str, ...]
+    categoria:Annotated[str, ...]
 
 def input_node(state: InputSchema) -> MessagesState:
     try:
@@ -55,8 +55,8 @@ def output_node(state: MessagesState) -> OutputState:
         match = re.search(r"APROBADA:\s*\"([^\"]+)\"", state["messages"][-1].content)
         if match:
             categoria = match.group(1)  # Extraer el valor después de "APROBADA:"
-            return {"category": categoria}
-        return {"category": "Otras consultas"}  # Valor por defecto si no se logró aprobar la categoría.
+            return {"categoria": categoria}
+        return {"categoria": "Otras consultas"}  # Valor por defecto si no se logró aprobar la categoría.
     except Exception as e:
         raise RuntimeError(f"Error al generar la salida: {e}")
 

@@ -11,12 +11,11 @@ from openai import AzureOpenAI
 from typing import List
 from dotenv import load_dotenv
 from fastapi import UploadFile
-from typing_extensions import TypedDict
 from azure.ai.documentintelligence.models import AnalyzeResult, DocumentContentFormat
-from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 from typing import Optional
 from pydantic import BaseModel, Field
 import pandas as pd
+import re
 
 from agentiacap.utils.globals import cods_soc, socs, cuits, lista_sociedades
 
@@ -126,18 +125,30 @@ def analyze_document_prebuilt_invoice(client, file_bytes: bytes, fields_to_extra
     
     return data
 
+def extract_table_layout(file_bytes: bytes, header_ref: str = None) -> pd.DataFrame:
 
-def extract_table_layout(file_bytes: bytes, header_ref: str = None) -> list:
+    def normalizar_header(header: str):
+        if header:
+            header = header.strip().lower()
+            header = re.sub(r"[^\w\s]", "", header)  # elimina signos como º, ., etc.
+            header = re.sub(r"\s+", "_", header)     # reemplaza espacios por _
+        return header
+
+
     client = initialize_client()
     poller = client.begin_analyze_document(
-        model_id="prebuilt-layout", 
+        model_id="prebuilt-layout",
         body=file_bytes,
         output_content_format=DocumentContentFormat.MARKDOWN,
         content_type="application/pdf"
     )
-
+    
     result: AnalyzeResult = poller.result()
-    tables = []
+    tablas_validas = []
+    ref_error = 0
+    ref_column_count = None
+    header_detected = False
+    header_columns = None
 
     for table_idx, table in enumerate(result.tables):
         print(f"Table # {table_idx} has {table.row_count} rows and {table.column_count} columns")
@@ -153,7 +164,6 @@ def extract_table_layout(file_bytes: bytes, header_ref: str = None) -> list:
 
         df = pd.DataFrame(table_data)
 
-        # Si se proporciona header_ref, buscar la fila con el encabezado
         if header_ref:
             header_index = None
             for i, row in df.iterrows():
@@ -161,15 +171,89 @@ def extract_table_layout(file_bytes: bytes, header_ref: str = None) -> list:
                     header_index = i
                     break
 
-            if header_index is None:
-                raise ValueError(f"D.I. Layout: No se encontró la referencia '{header_ref}' en la tabla {table_idx}.")
+            if header_index is not None:
+                # Se detectó el encabezado
+                header_columns = [normalizar_header(col) for col in df.iloc[header_index]]
+                ref_column_count = len(header_columns)
+                header_detected = True
 
-            df.columns = df.iloc[header_index]  # Usar esa fila como encabezado
-            df = df[header_index + 1:].reset_index(drop=True)  # Tomar solo las filas siguientes
+                df = df[header_index + 1:].reset_index(drop=True)
+                df.columns = header_columns
+                tablas_validas.insert(0, df)  # encabezado primero
+            else:
+                if not header_detected:
+                    ref_error += 1
+                    if ref_error == len(result.tables):
+                        raise ValueError(f"D.I. Layout: No se encontró la columna '{header_ref}'.")
+                continue
+        else:
+            if header_detected and df.shape[1] == ref_column_count:
+                df.columns = header_columns
+                tablas_validas.append(df)
 
-        tables.append(df)
+    if not tablas_validas:
+        raise ValueError("No se encontraron tablas válidas para concatenar.")
 
-    return tables
+    tabla_final = pd.concat(tablas_validas, ignore_index=True)
+    return tabla_final
+
+
+def extract_table_custom_layout(file_bytes: bytes) -> pd.DataFrame:
+    def normalizar_header(header: str):
+        if header:
+            header = header.strip().lower()
+            header = re.sub(r"[^\w\s]", "", header)  # elimina signos como º, ., etc.
+            header = re.sub(r"\s+", "_", header)     # reemplaza espacios por _
+        return header
+
+
+    load_dotenv()
+    endpoint = os.getenv("AZURE_DOCUMENT_ENDPOINT")
+    key = os.getenv("AZURE_DOCUMENT_KEY")
+    model_id = os.getenv("AZURE_CUSTOM_MODEL_ID")
+
+    client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+    poller = client.begin_analyze_document(
+        model_id=model_id,
+        body=file_bytes,
+        content_type="application/pdf"
+    )
+    result = poller.result()
+
+    # Buscar tabla etiquetada como 'Datos_Sap'
+    tabla = result.documents[0].fields.get("Datos_Sap")
+    if tabla and tabla.type == "array":
+        filas = []
+        # Iterar sobre los registros de la tabla
+        for fila in tabla.value_array:
+            # Extraer cada valor de los campos
+            n_doc = fila.value_object.get('N° doc', {}).get('valueString', '')
+            clas = fila.value_object.get('Clas', {}).get('valueString', '')
+            fecha_doc = fila.value_object.get('Fecha doc', {}).get('valueString', '')
+            referencia = fila.value_object.get('Referencia', {}).get('valueString', '')
+            fecha_base = fila.value_object.get('Fecha base', {}).get('valueString', '')
+            vence_el = fila.value_object.get('Vence el', {}).get('valueString', '')
+            impte_mon_extr = fila.value_object.get('Impte.mon.extr', {}).get('valueString', '')
+            doc_comp = fila.value_object.get('Doc comp', {}).get('valueString', '')
+            compens = fila.value_object.get('Compens', {}).get('valueString', '')
+            
+            # Agregar la fila extraída al listado de filas
+            filas.append({
+                'N° doc': n_doc,
+                'Clas': clas,
+                'Fecha doc': fecha_doc,
+                'Referencia': referencia,
+                'Fecha base': fecha_base,
+                'Vence el': vence_el,
+                'Impte.mon.extr': impte_mon_extr,
+                'Doc comp': doc_comp,
+                'Compens': compens
+            })
+
+        # Convertir la lista de filas a un DataFrame
+        df = pd.DataFrame(filas)
+        df.columns = [normalizar_header(col) for col in df.columns]
+    return df
         
 
 def process_base64_files(base64_files: list, fields_to_extract: list) -> list:
@@ -278,25 +362,6 @@ def split_pdf_in_pages(pdf_bytes):
     doc.close()
     return paginas  # Lista de binarios
 
-# def find_in_binary_files_layout(file_name:str, binary_file, mothod_prompt:str) -> list:
-#     client = initialize_client()
-#     final_results = {}
-#     try:
-#         # Se usa el modelo Layout en lugar del modelo Invoice
-#         text_result = analyze_document_layout(client, binary_file, mothod_prompt)
-        
-#         final_results[file_name] = text_result
-
-#     except Exception as e:
-#         final_results[file_name] = {
-#             "document_id": 0,
-#             "fields": {},
-#             "missing_fields": [],
-#             "error": str(e),
-#             "source": "Document Intelligence - Layout"
-#         }
-    
-#     return [final_results]
 
 class ImageFieldExtractor:
     def __init__(self):
@@ -470,13 +535,11 @@ class ImageFieldExtractor:
                         }
                     )
 
-                    # print(f"Se ha procesado la imagen con el LLM.\nCompletion: \n{completion}")
                     data = self.parse_completion_response(completion)
                     print(f"Data extraida con VISION: \n{data}")
                     list_data = []
                     for index, element in enumerate(data):
-                        # print("Index: ",index)
-                        # print("Value: ",element)
+
                         list_data.append({
                             "extraction_number": index + 1,
                             "fields": element,
@@ -484,9 +547,7 @@ class ImageFieldExtractor:
                             "source": "Vision",
                             "tokens": total_tokens
                         })
-                    # prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
-                    # completion_tokens = getattr(completion.usage, "completion_tokens", 0)
-                    # total_tokens = prompt_tokens + completion_tokens
+
                     all_results[file_name] = list_data
                     logging.info(f"Resultados de la imagen {file_name} guardados")
                 except Exception as model_error:
@@ -501,91 +562,6 @@ class ImageFieldExtractor:
             return [all_results]
         except Exception as e:
             return {"error": str(e)}
-
-    # def extract_fields_binary(self, binary_images: list, fields_to_extract: List[str]):
-    #     """
-    #     Extrae datos específicos de una lista de imágenes en binario y organiza los resultados en un diccionario.
-
-    #     :param binary_images: Lista de diccionarios con datos de las imágenes (file_name y content en binario).
-    #     :param fields_to_extract: Lista de campos a extraer.
-    #     :return: Diccionario con los resultados extraídos o información de error.
-    #     """
-    #     try:
-    #         if not binary_images or not isinstance(binary_images, list):
-    #             raise ValueError("La lista de imágenes en binario no es válida.")
-    #         if not fields_to_extract or not isinstance(fields_to_extract, list):
-    #             raise ValueError("La lista de campos a extraer no es válida.")
-
-    #         all_results = {}
-
-    #         for index, image_data in enumerate(binary_images):
-    #             file_name = image_data.get("file_name", f"unknown_{index + 1}")
-    #             content = image_data.get("content", b"")  # Ahora es binario
-
-    #             if not content:
-    #                 all_results[file_name] = {
-    #                     "fields": {},
-    #                     "missing_fields": [],
-    #                     "error": "El contenido de la imagen está vacío.",
-    #                     "source": "Vision"
-    #                 }
-    #                 continue
-
-    #             # Crear input con el contenido binario
-    #             user_content = self.create_user_content(content, fields_to_extract)
-
-    #             messages = [
-    #                 {"role": "system", "content": "Eres un asistente que extrae datos de documentos."},
-    #                 {"role": "user", "content": user_content}
-    #             ]
-
-    #             total_tokens = 0  # Definir total_tokens antes del try-except
-
-    #             try:
-    #                 completion = self.openai_client.chat.completions.create(
-    #                     model=self.gpt_model_name,
-    #                     messages=messages,
-    #                     max_tokens=10000,
-    #                     temperature=0.1,
-    #                     top_p=0.1
-    #                 )
-
-
-    #                 # Asegurar que total_tokens siempre esté definido
-    #                 prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
-    #                 completion_tokens = getattr(completion.usage, "completion_tokens", 0)
-    #                 total_tokens = prompt_tokens + completion_tokens
-
-    #                 data = self.parse_completion_response(completion)
-
-    #                 # Crear el diccionario de campos extraídos
-    #                 extracted_fields = {field_name: data.get(field_name, None) for field_name in fields_to_extract}
-
-    #                 # Identificar campos faltantes
-    #                 missing_fields = [field for field, value in extracted_fields.items() if value is None]
-
-    #                 # Guardar resultados en un diccionario
-    #                 all_results[file_name] = {
-    #                     "invoice_number": index + 1,
-    #                     "fields": extracted_fields,
-    #                     "missing_fields": missing_fields,
-    #                     "error": "",
-    #                     "source": "Vision",
-    #                     "tokens": total_tokens
-    #                 }
-
-    #             except Exception as model_error:
-    #                 all_results[file_name] = {
-    #                     "fields": {},
-    #                     "missing_fields": [],
-    #                     "error": str(model_error),
-    #                     "source": "Vision",
-    #                     "tokens": total_tokens
-    #                 }
-
-    #         return all_results
-    #     except Exception as e:
-    #         return {"error": str(e)}
 
     def es_carta_modelo(self, base64_images):
         """
@@ -765,13 +741,18 @@ class ImageFieldExtractor:
                         }
                     )
 
-                    # print(f"Se ha procesado la imagen con el LLM.\nCompletion: \n{completion}")
                     data = self.parse_completion_response_str(completion)
                     print(f"Data extraida con VISION: \n{data}")
-                    # prompt_tokens = getattr(completion.usage, "prompt_tokens", 0)
-                    # completion_tokens = getattr(completion.usage, "completion_tokens", 0)
-                    # total_tokens = prompt_tokens + completion_tokens
-                    all_results.append({"file_name": file_name, **json.loads(data)})
+                    all_results.append(
+                        {
+                            "file_name": file_name, 
+                            "source":"Vision",
+                            "extractions": {
+                                **json.loads(data)
+                            } 
+                        }
+                    )
+
                     logging.info(f"Resultados de la imagen {file_name} guardados")
                 except Exception as model_error:
                     all_results[file_name] = {"error": str(model_error)}

@@ -1,4 +1,5 @@
 from typing_extensions import Annotated, TypedDict
+from agentiacap.llms.llms import llm4o_mini
 
 ### Clases reutilizables ###
 class MailSchema(TypedDict):
@@ -11,7 +12,7 @@ class MailSchema(TypedDict):
     tokens:Annotated[int, ...]
     
 class Result(TypedDict):
-    category:Annotated[str, ...]
+    categoria:Annotated[str, ...]
     extractions:Annotated[list, ...]
     tokens:Annotated[int, ...]
 
@@ -122,3 +123,125 @@ Formato de respuesta esperado (sin explicaciones adicionales):
   "contiene_texto": true/false
 }
 """
+
+def obtener_valor_por_prioridad(extractions, campo, fuentes_prioritarias):
+    for fuente in fuentes_prioritarias:
+        #extractions es una lista con objetos por cada tipo de extraccion
+        for extraccion in extractions:
+            if extraccion["source"] == fuente:
+                #extraccion["extractions"] es una lista de objetos por cada documento procesado
+                for documents in extraccion["extractions"]:
+                    #document es una lista de objetos por cada pagina extraida
+                    for document in documents:
+                        document_data = documents[document]
+                        for page in document_data:
+                            value = page["fields"].get(campo, None)
+                            if value:
+                                value = value.strip() 
+                                if value.lower() not in ["none", "", "-", "null"]:
+                                    return value  # Retorna el primer valor válido
+
+    return None  # Si no encuentra nada válido, retorna None
+
+def obtener_facturas(extractions):
+    nulos = ["null", "none", "-", "", None]
+    facturas = []
+    ids_vistos = set()
+    fecha_monto_vistos = set()
+    fuentes_facturas = ["Document Intelligence", "Vision"]
+
+    for fuente in fuentes_facturas:
+        for extraccion in extractions:
+            if extraccion["source"] == fuente:
+                for documents in extraccion["extractions"]:
+                    for document in documents:
+                        document_data = documents[document]
+                        for page in document_data:
+                            fields = page["fields"]
+                            invoice_id = fields.get("InvoiceId", None)
+                            invoice_date = fields.get("InvoiceDate", None)
+                            invoice_total = fields.get("InvoiceTotal", None)
+
+                            if invoice_id and invoice_id not in ids_vistos:
+                                if invoice_id not in nulos and invoice_date not in nulos:
+                                    facturas.append({"Factura": invoice_id, "Fecha": invoice_date, "Monto": invoice_total})
+                                    ids_vistos.add(invoice_id)
+                            elif invoice_date not in nulos and invoice_total not in nulos:
+                                clave = (invoice_date, invoice_total)
+                                if clave not in fecha_monto_vistos:
+                                    facturas.append({"Factura": "", "Fecha": invoice_date, "Monto": invoice_total})
+                                    fecha_monto_vistos.add(clave)
+
+    for extraccion in extractions:
+        if extraccion["source"] == "Mail":
+            for documents in extraccion["extractions"]:
+                for document in documents:
+                    document_data = documents[document]
+                    for page in document_data:
+                        fields = page["fields"]
+                        invoice_id = fields.get("InvoiceId", [])
+                        invoice_date = fields.get("InvoiceDate", [])
+                        invoice_total = fields.get("InvoiceTotal", [])
+
+                        if not invoice_id: invoice_id = []
+                        if not invoice_date: invoice_date = []
+                        if not invoice_total: invoice_total = []
+
+                        max_length = max(len(invoice_id), len(invoice_date), len(invoice_total))
+                        for i in range(max_length):
+                            invoice = invoice_id[i] if i < len(invoice_id) else ""
+                            fecha = invoice_date[i] if i < len(invoice_date) else ""
+                            monto = invoice_total[i] if i < len(invoice_total) else ""
+
+                            if invoice not in nulos:
+                                if invoice not in ids_vistos:
+                                    facturas.append({"Factura": invoice, "Fecha": fecha, "Monto": monto})
+                                    ids_vistos.add(invoice)
+                            elif fecha not in nulos and monto not in nulos:
+                                clave = (fecha, monto)
+                                if clave not in fecha_monto_vistos:
+                                    facturas.append({"Factura": "", "Fecha": fecha, "Monto": monto})
+                                    fecha_monto_vistos.add(clave)
+
+    return facturas
+
+
+def generar_resumen(datos):
+    extractions = datos.get("extracciones", [])
+    fuentes_prioritarias = ["Mail", "Document Intelligence", "Vision"]
+    customer = obtener_valor_por_prioridad(extractions, "CustomerName", fuentes_prioritarias)
+    cod_soc = obtener_valor_por_prioridad(extractions, "CustomerCodSap", fuentes_prioritarias)
+    resume = {
+        "CUIT": obtener_valor_por_prioridad(extractions, "VendorTaxId", fuentes_prioritarias),
+        "Proveedor": obtener_valor_por_prioridad(extractions, "VendorName", fuentes_prioritarias),
+        "Sociedad": customer,
+        "Cod_Sociedad": cod_soc,
+        "Facturas": obtener_facturas(extractions)
+    }
+
+    return resume
+
+def generate_message(cuerpo, resume):
+    response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
+                            En base a este mail de entrada: {cuerpo}. 
+                            Redactá un mail con la siguiente estructura:
+
+                            Estimado, 
+                            
+                            Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
+                            <Lista los valores de la siguiente lista (solamente lo valores de la lista, no infieras datos que no esten en la lista): {resume.keys()}. Si algun valor de esa lista es igual a 'Facturas' agrega debajo el detalle: *Facturas (recordá mencionarlas con su numero completo 9999A99999999). Si en la lista no hay un valor 'Facturas' no agregues este detalle>
+                            
+                            De tu consulta pudimos obtener la siguiente información:
+                            <formatear el siguiente diccionario para que sea legible y mantenga la manera de escribir que se viene usando en el mail.>
+                            {resume}
+                            
+                            En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
+
+                            Instrucciones de salida:
+                            -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
+                            -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
+                            -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html para que se pueda estructurar en Outlook y no incluyas asunto en la respuesta.
+                            -No aclares que estas generando un mail de respuesta, solo brinda el mail.
+                            -No generes un saludo de despedida ni una firma.
+                                """)
+    return response.content

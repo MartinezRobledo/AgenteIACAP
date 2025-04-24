@@ -10,10 +10,11 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import quote
 
+from agentiacap.tools.busqueda_sap import SAP_buscar_por_factura, procesar_solicitud_busqueda_sap
 from agentiacap.utils.globals import InputSchema
+from agentiacap.workflows import responser
 from agentiacap.workflows.responser import responder_mail
 from agentiacap.workflows.main import graph
-from agentiacap.tools.op_data_extractor import ExtractSAP, ExtractEsker
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
@@ -87,7 +88,7 @@ def Extraction_Orchestrator(context: df.DurableOrchestrationContext):
     # Diccionario con las actividades disponibles
     activities = {
         "sap": ExtractionSap,
-        "esker": ExtractionEsker,
+        # "esker": ExtractionEsker,
     }
     
     if activity_name.lower() not in activities:
@@ -102,7 +103,7 @@ def Responser_Orchestrator(context: df.DurableOrchestrationContext):
     input_data = context.get_input()
     
     # Llamar a la actividad
-    result = yield context.call_activity(Responser, input_data)
+    result = yield context.call_activity(responser, input_data)
     return result
 
 # Activity: realiza el procesamiento (por ejemplo, invoca graph.ainvoke)
@@ -150,8 +151,8 @@ async def ExtractionSap(req: dict) -> dict:
     logging.info("Python activity function processed a request.")
 
     try:
-        inputs = req["facturas"]
-        urls_adjuntos = req["adjuntos"]
+        inputs = req["inputs"]
+        urls_adjuntos = req["files"]
 
     except Exception as e:
         return {"error": f"Body no válido. Error: {e}"}
@@ -174,63 +175,10 @@ async def ExtractionSap(req: dict) -> dict:
         return {"error": f"Error al obtener archivos del storage. Error: {e}"}
 
     try:
-        response = await ExtractSAP(adjuntos, inputs)
+        for file in adjuntos:
+            response = await procesar_solicitud_busqueda_sap(file, inputs)
     except Exception as e:
         logging.error(f"Error al invocar graph.ainvoke: {e}")
-        return {"error": f"Error al procesar la solicitud. Error: {e}"}
-
-    return response.get("extractions", {})
-
-@app.activity_trigger(input_name="req")
-async def ExtractionEsker(req: dict) -> dict:
-    logging.info("Python activity function processed a request.")
-
-    try:
-        inputs = req["inputs"]
-        urls_adjuntos = req["adjuntos"]
-
-    except Exception as e:
-        return {"error": f"Body no válido. Error: {e}"}
-
-    # Validar que 'adjuntos' sea una lista de URLs
-    if not isinstance(urls_adjuntos, list):
-        return {
-            "error": "Los adjuntos deben ser una lista de URLs de archivos."
-        }
-
-    try:
-        adjuntos = []
-        for file_url in urls_adjuntos:
-            archivo = obtener_blob_por_url(file_url)
-            if archivo:
-                adjuntos.append(archivo)
-            else:
-                logging.warning(f"No se pudo obtener el archivo desde {file_url}")
-    except Exception as e:
-        return {"error": f"Error al obtener archivos del storage. Error: {e}"}
-
-    try:
-        response = await ExtractEsker(adjuntos, inputs)
-    except Exception as e:
-        logging.error(f"Error al invocar graph.ainvoke: {e}")
-        return {"error": f"Error al procesar la solicitud. Error: {e}"}
-
-    return response.get("aggregate", {})
-
-@app.activity_trigger(input_name="req")
-def Responser(req: dict) -> dict:
-    logging.info("Python activity function processed a request.")
-
-    try:
-        inputs = req["inputs"]
-
-    except Exception as e:
-        return {"error": f"Body no válido. Error: {e}"}
-
-    try:
-        response = responder_mail(inputs)
-    except Exception as e:
-        logging.error(f"Error al invocar responser: {e}")
         return {"error": f"Error al procesar la solicitud. Error: {e}"}
 
     return response

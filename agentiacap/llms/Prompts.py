@@ -1,3 +1,4 @@
+import datetime
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from agentiacap.utils.globals import categories, lista_sociedades, fields_to_extract
@@ -284,7 +285,7 @@ class TextExtractorPrompt:
         -"VendorName": "".
     """
 
-    invoice_id_prompt = """Eres un asistente especializado en extraer los datos de facturas del texto de un email. 
+    invoice_id_prompt = f"""Eres un asistente especializado en extraer los datos de facturas del texto de un email. 
     Los datos que debes obtener son:
     "InvoiceId": hace referencia al número de factura por la que se hace la consulta. Algunos ejemplos de como puede llegar a estar mencionada la factura son: documento, comprobante, certificado, FC, FCA, FCE, FEA, FA. El dato se puede encontrar presente tanto en el cuerpo como en el asunto del mail.
     "InvoiceDate": es la fecha de la factura o la fecha de pago mencionada.
@@ -300,6 +301,7 @@ class TextExtractorPrompt:
     -Los mails suelen tener un numero de caso del centro de atencion a proveedores que generalmente se menciona como "YPF-CAP", no se debe confundir ese numero con el numero de factura.
     -Si hay adjuntos se te van a pasar los nombres de cada uno de los archivos separados por '/' y deberás extraer el InvoiceId. Puede que mas de uno tenga un InvoiceId como puede que ninguno lo tenga.
     Se espera que solo devuelvas el dato tal como lo encontraste, sin modificarlo. En caso de no encontrar un dato que cumpla con lo pedido entonces devolve solo un string vacío. En caso de obtener mas de un numero de factura devolvelos en un array.
+    *Aclaración: La fecha de hoy es {datetime.date.today()}, Si el proveedor utiliza una expresión temporal deíctica para referirse al momento en que se realizó el pago calculala en base a la fecha de hoy devolve el resultado con el formato dd-MM-yyyy. Solo devolvé la fecha si puede determinarse con precisión (por ejemplo, "ayer", "hace 2 días"). Si la expresión es ambigua (como "la semana pasada", "hace un tiempo", etc.), devolvé un string vacío.
     """
 
 """

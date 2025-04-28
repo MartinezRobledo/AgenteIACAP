@@ -1,7 +1,6 @@
 import base64
 import io
 import pymupdf as fitz
-from io import BytesIO
 
 
 def render_pdf_page_as_image(pdf_path: str, page_number: int):

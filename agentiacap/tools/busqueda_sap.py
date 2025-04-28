@@ -1,10 +1,10 @@
-from asyncio.log import logger
+import logging
 import json
 import os
 from openai import AzureOpenAI
 from pydantic import BaseModel, Field
 from agentiacap.tools.document_intelligence import extract_table_custom_layout, extract_table_layout, split_pdf_in_pages
-from typing import List, Dict, Optional
+from typing import List
 import pandas as pd
 import traceback
 
@@ -197,7 +197,7 @@ async def SAP_buscar_por_factura(file:dict, inputs: list):
                     if not facturas_pendientes:
                         break
             except Exception as e:
-                logger.error(f"Error en 'ExtractSAP' al procesar la página '{i}': {str(e)}")
+                logging.fatal(f"Error en 'ExtractSAP' al procesar la página '{i}': {str(e)}")
                 raise
                 
             
@@ -306,7 +306,7 @@ async def SAP_buscar_por_factura(file:dict, inputs: list):
 
         return {"extractions": result}
     except Exception as e:
-        logger.error(f"Error en 'ExtractSAP': {str(e)}")
+        logging.fatal(f"Error en 'ExtractSAP': {str(e)}")
         raise
 
 
@@ -454,7 +454,7 @@ async def SAP_buscar_por_fecha_monto(file:dict, inputs: list):
         return {"extractions": facturas_encontradas}
 
     except Exception as e:
-        logger.error(f"Error en 'Extraccion_SAP_impresion_op': {str(e)}")
+        logging.fatal(f"Error en 'Extraccion_SAP_impresion_op': {str(e)}")
         raise
 
 async def SAP_buscar_por_fecha_base(file:dict, inputs: list):
@@ -591,7 +591,7 @@ async def SAP_buscar_por_fecha_base(file:dict, inputs: list):
 
     except Exception as e:
         error_info = traceback.format_exc()
-        logger.error(f"Error en 'SAP_buscar_por_fecha_base': {str(e)}\n{error_info}")
+        logging.fatal(f"Error en 'SAP_buscar_por_fecha_base': {str(e)}\n{error_info}")
         raise
 
 

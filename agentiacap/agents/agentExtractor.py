@@ -1,9 +1,9 @@
 import base64
-import datetime
 import operator
 import json
 import logging
 from collections import defaultdict
+import traceback
 from typing_extensions import TypedDict
 from typing import Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
@@ -251,7 +251,8 @@ class VisionNode:
             print(f"Resultado de extraccion: \n{result}")
             return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
-            logger.error(f"Error en 'VisionNode': {str(e)}")
+            error_info = traceback.format_exc()
+            logging.fatal(f"Error en 'VisionNode': {str(e)}\n{error_info}")
             raise
 
 class ImageNode:
@@ -272,7 +273,8 @@ class ImageNode:
             tokens = 0
             return {"tokens": state["tokens"] + tokens, "aggregate": result}
         except Exception as e:
-            logger.error(f"Error en 'ImageNode': {str(e)}")
+            error_info = traceback.format_exc()
+            logging.fatal(f"Error en 'ImageNode': {str(e)}\n{error_info}")
             raise
 
 class PrebuiltNode:
@@ -284,7 +286,8 @@ class PrebuiltNode:
             print(f"DEBUG-Resultado Prebuilt: \n{result}")
             return {"tokens": 0, "aggregate": result}
         except Exception as e:
-            logger.error(f"Error en 'PrebuiltNode': {str(e)}")
+            error_info = traceback.format_exc()
+            logging.fatal(f"Error en 'PrebuiltNode': {str(e)}\n{error_info}")
             raise
 
 class NamesAndCuitsNode:
@@ -305,9 +308,11 @@ class NamesAndCuitsNode:
                 }
             )
             result = json.loads(result.generations[0][0].text.strip())["final_answer"]
+
             return {"CustomerName": result["CustomerName"], "CustomerTaxId": result["CustomerTaxId"], "VendorName": result["VendorName"], "VendorTaxId": result["VendorTaxId"]}
         except Exception as e:
-            logger.error(f"Error en 'NamesAndCuitsNode': {str(e)}")
+            error_info = traceback.format_exc()
+            logging.fatal(f"Error en 'NamesAndCuitsNode': {str(e)}\n{error_info}")
             raise
 
 class InvoiceNode:
@@ -328,15 +333,16 @@ class InvoiceNode:
                 }
             )
             result = json.loads(result.generations[0][0].text.strip())["final_answer"]
+
             return {"InvoiceId": result["InvoiceId"], "InvoiceDate": result["InvoiceDate"], "InvoiceTotal": result["InvoiceTotal"], "PurchaseOrderNumber": result["PurchaseOrderNumber"]}
         except Exception as e:
-            logger.error(f"Error en 'InvoiceNode': {str(e)}")
+            error_info = traceback.format_exc()
+            logging.fatal(f"Error en 'InvoiceNode': {str(e)}\n{error_info}")
             raise
 
 def MergeFieldsNode(state: Fields) -> State:
     print(f"DEBUG-MergeFields")
     try:
-        # state = fix_data(state)
         missing_fields = []
         for field in fields_to_extract:
             if field not in state:
@@ -352,7 +358,8 @@ def MergeFieldsNode(state: Fields) -> State:
         }
         return {"aggregate": [result]}
     except Exception as e:
-        logger.error(f"Error en 'MergeFieldsNode': {str(e)}")
+        error_info = traceback.format_exc()
+        logging.fatal(f"Error en 'MergeFieldsNode': {str(e)}\n{error_info}")
         raise
 
 # Analizo todo los adjuntos si los hay
@@ -376,7 +383,8 @@ def router(state: State) -> Sequence[str]:
         
         return routes
     except Exception as e:
-        logger.error(f"Error en 'router': {str(e)}")
+        error_info = traceback.format_exc()
+        logging.fatal(f"Error en 'router': {str(e)}\n{error_info}")
         raise
 
 async def super_steps_balance(state: State):
@@ -410,7 +418,8 @@ async def merge_results(state: State) -> OutputState:
         return {"extractions": formatted_data, "tokens": state["tokens"]}
 
     except Exception as e:
-        logger.error(f"Error en 'merge_results': {str(e)}")
+        error_info = traceback.format_exc()
+        logging.fatal(f"Error en 'merge_results': {str(e)}\n{error_info}")
         raise
 
 def should_continue(state:State):

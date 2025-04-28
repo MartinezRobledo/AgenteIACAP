@@ -16,10 +16,8 @@ from urllib.parse import quote
 
 from agentiacap.workflows.sentiment_validator import sentiment
 
-# INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Devolución de retenciones - Casos reales.xlsx"
-INPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Casos de prueba.xlsx"
-# OUTPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Devolución de retenciones\\Pruebas - Pedido devolución retenciones - 10042025.xlsx"
-OUTPUT_FILE = "C:\\Users\\Adrián\\Enta Consulting\\Optimización del CAP - General\\Casos procesados 23-04-25.xlsx"
+INPUT_FILE = "Casos de prueba.xlsx"
+OUTPUT_FILE = "Casos procesados 23-04-25.xlsx"
 
 load_dotenv()
 

@@ -1,11 +1,10 @@
-from asyncio.log import logger
+import logging
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 from agentiacap.tools.document_intelligence import ImageFieldExtractor
-from agentiacap.utils.globals import MailSchema, OutputSchema
 from agentiacap.workflows.responser import responder_mail_retenciones
 from agentiacap.agents.agentExtractor import extractor
 from langgraph.graph import StateGraph, START, END
-from agentiacap.utils.globals import InputSchema, MailSchema, OutputSchema, generate_message, obtener_facturas, obtener_valor_por_prioridad
+from agentiacap.utils.globals import InputSchema, MailSchema, OutputSchema
 
 
 async def call_extractor(state: MailSchema) -> MailSchema:
@@ -14,7 +13,7 @@ async def call_extractor(state: MailSchema) -> MailSchema:
         extracted_result = await extractor.ainvoke(input_schema)
         return {"extracciones": extracted_result["extractions"], "tokens": extracted_result["tokens"]}
     except Exception as e:
-        logger.error(f"Error en 'call_extractor': {str(e)}")
+        logging.error(f"Error en 'call_extractor': {str(e)}")
         raise
 
 def faltan_datos_requeridos(resume):
@@ -127,7 +126,7 @@ def devolucion_retenciones(state: MailSchema) -> OutputSchema:
         return {"result": result}
     
     except Exception as e:
-        logger.error(f"Error en 'output_node': {str(e)}")
+        logging.error(f"Error en 'output_node': {str(e)}")
         raise
 
 builder = StateGraph(input=MailSchema, output=OutputSchema)

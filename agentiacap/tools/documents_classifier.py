@@ -1,4 +1,4 @@
-from fastapi import logger
+import logging
 from agentiacap.tools.convert_pdf import pdf_binary_to_images_base64
 from agentiacap.tools.document_intelligence import ImageFieldExtractor
 
@@ -22,7 +22,7 @@ def wrapper_es_carta_modelo(state):
         
         return result
     except Exception as e:
-        logger.error(f"Error en 'wrapper_es_carta_modelo': {str(e)}")
+        logging.error(f"Error en 'wrapper_es_carta_modelo': {str(e)}")
         raise
 
 # path_pdf = "D:\\Python\\AgentIACAP\\tests\\Ejemplo carta modelo.pdf"

@@ -6,7 +6,7 @@ cd AgenteIACAP
 
 ### Crear entorno para la Azure Function
 ```bash
-py -3.11 -m venv .venv
+py -3.10 -m venv .venv
 .venv\Scripts\Activate
 ```
 

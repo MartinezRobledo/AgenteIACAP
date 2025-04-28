@@ -1,7 +1,8 @@
-from asyncio.log import logger
+import logging
 from langgraph.graph import StateGraph, START, END
 from agentiacap.agents.agentExtractor import extractor
-from agentiacap.utils.globals import InputSchema, MailSchema, OutputSchema, generate_message, obtener_facturas, obtener_valor_por_prioridad
+from agentiacap.utils.globals import InputSchema, MailSchema, OutputSchema, obtener_facturas, obtener_valor_por_prioridad
+from agentiacap.llms.llms import llm4o_mini
 
 def generar_resumen(datos):
     extractions = datos.get("extracciones", [])
@@ -30,13 +31,43 @@ def faltan_datos_requeridos(resume):
 
     return falta_campo_requerido or falta_fecha
 
+def generate_message(cuerpo, resume):
+    claves = resume.copy()
+    claves.pop("Facturas", None)
+    claves = claves.keys()
+
+    response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
+                            En base a este mail de entrada: {cuerpo}. 
+                            Redactá un mail con la siguiente estructura:
+
+                            Estimado, 
+                            
+                            Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
+                            <Lista los elementos de la siguiente lista {claves}.>
+                            
+                            De tu consulta pudimos obtener la siguiente información:
+                            <formatear el siguiente diccionario para que sea legible y mantenga la manera de escribir que se viene usando en el mail.>
+                            {resume}
+                            
+                            En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
+
+                            Instrucciones de salida:
+                            -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
+                            -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
+                            -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html para que se pueda estructurar en Outlook y no incluyas asunto en la respuesta.
+                            -No aclares que estas generando un mail de respuesta, solo brinda el mail.
+                            -No generes un saludo de despedida ni una firma.
+                            -Los montos separalos por punto y coma (;) ya que si los separas solo por coma (,) se puede confundir la lectura.
+                                """)
+    return response.content
+
 async def call_extractor(state: MailSchema) -> MailSchema:
     try:
         input_schema = InputSchema(asunto=state["asunto"], cuerpo=state["cuerpo_original"], adjuntos=state["adjuntos"])
         extracted_result = await extractor.ainvoke(input_schema)
         return {"extracciones": extracted_result["extractions"], "tokens": extracted_result["tokens"]}
     except Exception as e:
-        logger.error(f"Error en 'call_extractor': {str(e)}")
+        logging.error(f"Error en 'call_extractor': {str(e)}")
         raise
 
 def resumen_impresion_op(state: MailSchema) -> OutputSchema:
@@ -50,7 +81,7 @@ def resumen_impresion_op(state: MailSchema) -> OutputSchema:
                 message = generate_message(state.get("cuerpo"),
                             {
                                 "CUIT": resume["CUIT"], 
-                                "Sociedad": resume["Sociedad"],
+                                "Sociedad de YPF": resume["Sociedad"],
                                 "Fecha de transeferencia": [f["Fecha"] for f in resume["Facturas"]],
                                 "Montos": [f["Monto"] for f in resume["Facturas"]]
                             }
@@ -67,7 +98,7 @@ def resumen_impresion_op(state: MailSchema) -> OutputSchema:
         return {"result": result}
         
     except Exception as e:
-        logger.error(f"Error en 'output_node': {str(e)}")
+        logging.error(f"Error en 'output_node': {str(e)}")
         raise
 
 builder = StateGraph(input=MailSchema, output=OutputSchema)

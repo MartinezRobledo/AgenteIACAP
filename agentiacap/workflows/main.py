@@ -9,14 +9,13 @@ from agentiacap.workflows import devolucion_retenciones, estado_facturas, impres
 
 # Configuración del logger
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 async def call_cleaner(state: InputSchema) -> MailSchema:
     try:
         cleaned_result = await cleaner.ainvoke(state)
         return {"asunto":cleaned_result["asunto"], "cuerpo":cleaned_result["cuerpo"], "adjuntos":cleaned_result["adjuntos"], "cuerpo_original":state["cuerpo"]}
     except Exception as e:
-        logger.error(f"Error en 'call_cleaner': {str(e)}")
+        logging.error(f"Error en 'call_cleaner': {str(e)}")
         raise
 
 async def call_classifier(state: MailSchema) -> Command[Literal["estado_facturas", "impresion_op", "devolucion_retenciones", "output_node"]]:
@@ -38,7 +37,7 @@ async def call_classifier(state: MailSchema) -> Command[Literal["estado_facturas
             goto=goto
         )
     except Exception as e:
-        logger.error(f"Error en 'call_classifier': {str(e)}")
+        logging.error(f"Error en 'call_classifier': {str(e)}")
         raise
 
 
@@ -47,21 +46,21 @@ async def call_estado_facturas(state:MailSchema) -> MailSchema:
     try:
         return await estado_facturas.graph.ainvoke(state)
     except Exception as e:
-        logger.error(f"Error en Nodo 'estado_facturas': {str(e)}")
+        logging.error(f"Error en Nodo 'estado_facturas': {str(e)}")
         raise
 
 async def call_impresion_op(state:MailSchema) -> MailSchema:
     try:
         return await impresion_op.graph.ainvoke(state)
     except Exception as e:
-        logger.error(f"Error en Nodo 'impresion_op': {str(e)}")
+        logging.error(f"Error en Nodo 'impresion_op': {str(e)}")
         raise
 
 async def call_devolucion_retenciones(state:MailSchema) -> MailSchema:
     try:
         return await devolucion_retenciones.graph.ainvoke(state)
     except Exception as e:
-        logger.error(f"Error en 'devolución_retenciones': {str(e)}")
+        logging.error(f"Error en 'devolución_retenciones': {str(e)}")
         raise
 
 def output_node(state: MailSchema) -> OutputSchema:

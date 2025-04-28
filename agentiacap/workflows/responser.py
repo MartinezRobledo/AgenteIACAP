@@ -156,7 +156,27 @@ ret_caso_2 = """<p>Estimado proveedor,</p>
 """
 
 # 3.	Me pasan solo nota modelo correcta
-ret_caso_3 = """"""
+ret_caso_3 = """<p>Estimado proveedor,</p>
+
+<p>Hemos recibido la nota modelo correctamente, sin embargo, necesitamos que nos adjunte las retenciones
+    correspondientes para continuar con el reclamo. Recuerde que las mismas puede obtenerlas a través de la
+    <strong>Extranet de Proveedores</strong> dentro de los 45 días a partir de que se emitió el pago.</p>
+
+<p>Le recordamos que debe adjuntar las retenciones junto con la nota en un único archivo PDF titulado <strong>"Pedido de
+        devolución de retenciones"</strong>.</p>
+
+<p>Una vez recibida toda la documentación completa, daremos curso a su solicitud.</p>
+
+<p>Recuerde que no existe un plazo específico para la devolución de retenciones, pero puede consultar en la Extranet 10
+    días hábiles después de la aceptación de la nota emitida a YPF. Las devoluciones aparecerán en la Extranet como
+    <strong>Documentos AK</strong>.</p>
+
+<p>Quedamos a la espera de la documentación solicitada para procesar su solicitud.</p>
+
+<br>
+
+<p>Saludos cordiales,</p>
+"""
 #Podemos solicitar y volver a reclamar el envio de las retenciones o descargar por nuestros medios a partir de la información que nos proporciona la nota modelo. 
 
 # 4.	me pasan solo retenciones

@@ -1,0 +1,25 @@
+[project]
+name = "agentiacap"
+version = "0.1.30"
+description = ""
+authors = [
+    {name = "Adrián Martínez",email = "amartinez@entaconsulting.com"},
+    {name = "Eugenio Punti",email = "epunti@entaconsulting.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10.0,<4.0"
+dependencies = [
+    "langgraph (>=0.3.34,<0.4.0)",
+    "dotenv (>=0.9.9,<0.10.0)",
+    "langchain-openai (>=0.3.14,<0.4.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "pymupdf (>=1.25.5,<2.0.0)",
+    "azure-core (>=1.33.0,<2.0.0)",
+    "fastapi (>=0.115.12,<0.116.0)",
+    "azure-ai-documentintelligence (>=1.0.2,<2.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

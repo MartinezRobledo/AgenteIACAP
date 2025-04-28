@@ -2,7 +2,7 @@ import asyncio
 import json
 from agentiacap.llms.llms import llm4o
 
-FILE_PATH = r"C:\\Users\Adrián\\Enta Consulting\\Optimización del CAP - General\\Casos.xlsx"
+FILE_PATH = "Casos.xlsx"
 
 async def sentiment(subject: str, message: str):
     prompt = [

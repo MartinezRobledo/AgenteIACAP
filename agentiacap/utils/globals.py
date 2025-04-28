@@ -1,5 +1,4 @@
 from typing_extensions import Annotated, TypedDict
-from agentiacap.llms.llms import llm4o_mini
 
 ### Clases reutilizables ###
 class MailSchema(TypedDict):
@@ -220,28 +219,3 @@ def generar_resumen(datos):
     }
 
     return resume
-
-def generate_message(cuerpo, resume):
-    response = llm4o_mini.invoke(f"""-Eres un asistente que responde usando el estilo y tono de Argentina. Utiliza modismos argentinos y un lenguaje informal pero educado.
-                            En base a este mail de entrada: {cuerpo}. 
-                            Redactá un mail con la siguiente estructura:
-
-                            Estimado, 
-                            
-                            Para poder darte una respuesta necesitamos que nos brindes los siguientes datos:
-                            <Lista los valores de la siguiente lista (solamente lo valores de la lista, no infieras datos que no esten en la lista): {resume.keys()}. Si algun valor de esa lista es igual a 'Facturas' agrega debajo el detalle: *Facturas (recordá mencionarlas con su numero completo 9999A99999999). Si en la lista no hay un valor 'Facturas' no agregues este detalle>
-                            
-                            De tu consulta pudimos obtener la siguiente información:
-                            <formatear el siguiente diccionario para que sea legible y mantenga la manera de escribir que se viene usando en el mail.>
-                            {resume}
-                            
-                            En caso que haya algún dato incorrecto, por favor indicalo en tu respuesta.
-
-                            Instrucciones de salida:
-                            -Cuando sea necesario, quiero que me devuelvas el verbo sin el pronombre enclítico en la forma imperativa.
-                            -Los datos faltantes aclaralos solamente como "sin datos". No uses "None" ni nada por el estilo.
-                            -El mail lo va a leer una persona que no tiene conocimientos de sistemas. Solo se necesita el cuerpo del mail en html para que se pueda estructurar en Outlook y no incluyas asunto en la respuesta.
-                            -No aclares que estas generando un mail de respuesta, solo brinda el mail.
-                            -No generes un saludo de despedida ni una firma.
-                                """)
-    return response.content
